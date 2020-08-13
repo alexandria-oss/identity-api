@@ -7,7 +7,6 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/common"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"sync"
 )
@@ -21,19 +20,24 @@ type UserQueryAWSRepository struct {
 // Factory Method
 func NewUserQueryAWSRepository(k common.KernelStore) *UserQueryAWSRepository {
 	return &UserQueryAWSRepository{
-		client: cognito.New(session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))),
+		client: newCognitoSession(),
 		kernel: k,
 		mu:     new(sync.RWMutex),
 	}
 }
 
-func (r *UserQueryAWSRepository) FetchOne(ctx context.Context, key string) (*domain.User, error) {
+func (r *UserQueryAWSRepository) FetchOne(ctx context.Context, byUsername bool, key string) (*domain.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	statement := aws.String(fmt.Sprintf("sub = \"%s\"", key))
+	if byUsername {
+		statement = aws.String(fmt.Sprintf("username = \"%s\"", key))
+	}
+
 	o, err := r.client.ListUsersWithContext(ctx, &cognito.ListUsersInput{
 		AttributesToGet: nil,
-		Filter:          aws.String(fmt.Sprintf("sub = \"%s\"", key)),
+		Filter:          statement,
 		Limit:           aws.Int64(1),
 		PaginationToken: nil,
 		UserPoolId:      aws.String(r.kernel.Config.Cognito.UserPoolID),

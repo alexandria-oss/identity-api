@@ -16,9 +16,9 @@ func NewUserQueryImp(r domain.UserQueryRepository) *UserQueryImp {
 	}
 }
 
-func (q *UserQueryImp) Get(ctx context.Context, id string) (*domain.User, error) {
+func (q *UserQueryImp) Get(ctx context.Context, username string) (*domain.User, error) {
 	ctxI, _ := context.WithCancel(ctx)
-	return q.repository.FetchOne(ctxI, id)
+	return q.repository.FetchOne(ctxI, true, username)
 }
 
 func (q *UserQueryImp) List(ctx context.Context, token string, size int, filterMap common.FilterMap) (users []*domain.User,
