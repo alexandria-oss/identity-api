@@ -32,7 +32,7 @@ func (q *UserQueryImp) List(ctx context.Context, token string, size int, filterM
 		return
 	}
 
-	if size >= len(users) {
+	if size <= len(users) {
 		nextToken = common.QueryToken(users[len(users)-1].Sub)
 		users = users[:len(users)-1]
 	}
