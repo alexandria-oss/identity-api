@@ -52,24 +52,28 @@ func (r *UserQueryAWSRepository) Fetch(ctx context.Context, token string, size i
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var statement *string = nil
+	var tokenStr *string = nil
+	if token != "" {
+		tokenStr = aws.String(token)
+	}
 
+	var statement *string = nil
 forLoop:
 	for k, v := range filterMap {
-		switch k {
-		case "name":
+		switch {
+		case k == "name" && v != "":
 			statement = aws.String(fmt.Sprintf("name ^= \"%s\"", v))
 			break forLoop
-		case "email":
+		case k == "email" && v != "":
 			statement = aws.String(fmt.Sprintf("email ^= \"%s\"", v))
 			break forLoop
-		case "middle_name":
+		case k == "middle_name" && v != "":
 			statement = aws.String(fmt.Sprintf("middle_name ^= \"%s\"", v))
 			break forLoop
-		case "family_name":
+		case k == "family_name" && v != "":
 			statement = aws.String(fmt.Sprintf("family_name ^= \"%s\"", v))
 			break forLoop
-		case "locale":
+		case k == "locale" && v != "":
 			statement = aws.String(fmt.Sprintf("locale ^= \"%s\"", v))
 			break forLoop
 		}
@@ -79,7 +83,7 @@ forLoop:
 		AttributesToGet: nil,
 		Filter:          statement,
 		Limit:           aws.Int64(int64(size - 1)),
-		PaginationToken: aws.String(token),
+		PaginationToken: tokenStr,
 		UserPoolId:      aws.String(r.kernel.Config.Cognito.UserPoolID),
 	})
 
@@ -96,7 +100,7 @@ forLoop:
 	}
 
 	// Add required next pagination token user
-	if o.PaginationToken != nil {
+	if o.PaginationToken != nil && o.PaginationToken != aws.String("") {
 		users = append(users, &domain.User{Sub: *o.PaginationToken})
 	}
 
