@@ -6,6 +6,7 @@
 package dependency
 
 import (
+	"github.com/alexandria-oss/identity-api/internal/command"
 	"github.com/alexandria-oss/identity-api/internal/common"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure"
@@ -20,6 +21,13 @@ func InjectUserQuery() *query.UserQueryImp {
 	userQueryAWSRepository := infrastructure.NewUserQueryAWSRepository(kernelStore)
 	userQueryImp := query.NewUserQueryImp(userQueryAWSRepository)
 	return userQueryImp
+}
+
+func InjectUserCommand() *command.UserCommandImp {
+	kernelStore := common.NewKernelStore()
+	userCommandAWSRepository := infrastructure.NewUserCommandAWSRepository(kernelStore)
+	userCommandImp := command.NewUserCommand(userCommandAWSRepository)
+	return userCommandImp
 }
 
 // wire.go:
