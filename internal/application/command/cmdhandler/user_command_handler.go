@@ -7,27 +7,27 @@ import (
 )
 
 // Contains invokers
-type UserCommandHandlerImp struct {
+type UserImp struct {
 	repository repository.User
 }
 
-func NewUserCommandHandler(r repository.User) *UserCommandHandlerImp {
-	return &UserCommandHandlerImp{
+func NewUserCommandHandler(r repository.User) *UserImp {
+	return &UserImp{
 		repository: r,
 	}
 }
 
-func (c *UserCommandHandlerImp) Enable(cmd command.Enable) error {
+func (c *UserImp) Enable(cmd command.Enable) error {
 	ctxI, _ := context.WithCancel(cmd.Ctx)
 	return c.repository.Restore(ctxI, cmd.ID)
 }
 
-func (c *UserCommandHandlerImp) Disable(cmd command.Disable) error {
+func (c *UserImp) Disable(cmd command.Disable) error {
 	ctxI, _ := context.WithCancel(cmd.Ctx)
 	return c.repository.Remove(ctxI, cmd.ID)
 }
 
-func (c *UserCommandHandlerImp) Remove(cmd command.Remove) error {
+func (c *UserImp) Remove(cmd command.Remove) error {
 	ctxI, _ := context.WithCancel(cmd.Ctx)
 	return c.repository.HardRemove(ctxI, cmd.ID)
 }

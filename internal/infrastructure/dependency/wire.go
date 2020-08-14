@@ -3,20 +3,20 @@
 package dependency
 
 import (
-	"github.com/alexandria-oss/identity-api/internal/application/command"
+	"github.com/alexandria-oss/identity-api/internal/application/command/cmdhandler"
 	"github.com/alexandria-oss/identity-api/internal/application/query"
 	"github.com/alexandria-oss/identity-api/internal/domain"
-	"github.com/alexandria-oss/identity-api/internal/domain/user"
-	"github.com/alexandria-oss/identity-api/internal/infrastructure"
+	"github.com/alexandria-oss/identity-api/internal/domain/repository"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/driver"
+	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence"
 	"github.com/google/wire"
 )
 
 var userQuery = wire.NewSet(
 	domain.NewKernelStore,
-	wire.Bind(new(user.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)),
+	wire.Bind(new(repository.User), new(*persistence.UserAWSRepository)),
 	driver.NewCognitoSession,
-	infrastructure.NewUserQueryAWSRepository,
+	persistence.NewUserAWSRepository,
 	query.NewUserQuery,
 )
 
@@ -25,13 +25,13 @@ func InjectUserQuery() *query.UserQueryImp {
 	return &query.UserQueryImp{}
 }
 
-func InjectUserCommand() *command.UserCommandImp {
+func InjectUserCommandHandler() *cmdhandler.UserImp {
 	wire.Build(
 		domain.NewKernelStore,
-		wire.Bind(new(user.UserCommandRepository), new(*infrastructure.UserCommandAWSRepository)),
+		wire.Bind(new(repository.User), new(*persistence.UserAWSRepository)),
 		driver.NewCognitoSession,
-		infrastructure.NewUserCommandAWSRepository,
-		command.NewUserCommand,
+		persistence.NewUserAWSRepository,
+		cmdhandler.NewUserCommandHandler,
 	)
-	return &command.UserCommandImp{}
+	return &cmdhandler.UserImp{}
 }

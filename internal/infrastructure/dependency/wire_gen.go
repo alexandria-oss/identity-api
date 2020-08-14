@@ -6,12 +6,12 @@
 package dependency
 
 import (
-	"github.com/alexandria-oss/identity-api/internal/application/command"
+	"github.com/alexandria-oss/identity-api/internal/application/command/cmdhandler"
 	"github.com/alexandria-oss/identity-api/internal/application/query"
 	"github.com/alexandria-oss/identity-api/internal/domain"
-	"github.com/alexandria-oss/identity-api/internal/domain/user"
-	"github.com/alexandria-oss/identity-api/internal/infrastructure"
+	"github.com/alexandria-oss/identity-api/internal/domain/repository"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/driver"
+	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence"
 	"github.com/google/wire"
 )
 
@@ -20,19 +20,19 @@ import (
 func InjectUserQuery() *query.UserQueryImp {
 	cognitoIdentityProvider := driver.NewCognitoSession()
 	kernelStore := domain.NewKernelStore()
-	userQueryAWSRepository := infrastructure.NewUserQueryAWSRepository(cognitoIdentityProvider, kernelStore)
-	userQueryImp := query.NewUserQuery(userQueryAWSRepository)
+	userAWSRepository := persistence.NewUserAWSRepository(cognitoIdentityProvider, kernelStore)
+	userQueryImp := query.NewUserQuery(userAWSRepository)
 	return userQueryImp
 }
 
-func InjectUserCommand() *command.UserCommandImp {
+func InjectUserCommandHandler() *cmdhandler.UserImp {
 	cognitoIdentityProvider := driver.NewCognitoSession()
 	kernelStore := domain.NewKernelStore()
-	userCommandAWSRepository := infrastructure.NewUserCommandAWSRepository(cognitoIdentityProvider, kernelStore)
-	userCommandImp := command.NewUserCommand(userCommandAWSRepository)
-	return userCommandImp
+	userAWSRepository := persistence.NewUserAWSRepository(cognitoIdentityProvider, kernelStore)
+	userImp := cmdhandler.NewUserCommandHandler(userAWSRepository)
+	return userImp
 }
 
 // wire.go:
 
-var userQuery = wire.NewSet(domain.NewKernelStore, wire.Bind(new(user.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)), driver.NewCognitoSession, infrastructure.NewUserQueryAWSRepository, query.NewUserQuery)
+var userQuery = wire.NewSet(domain.NewKernelStore, wire.Bind(new(repository.User), new(*persistence.UserAWSRepository)), driver.NewCognitoSession, persistence.NewUserAWSRepository, query.NewUserQuery)
