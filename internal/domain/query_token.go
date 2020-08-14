@@ -1,3 +1,3 @@
-package common
+package domain
 
 type QueryToken string

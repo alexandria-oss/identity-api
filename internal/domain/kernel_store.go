@@ -1,4 +1,4 @@
-package common
+package domain
 
 import "github.com/spf13/viper"
 

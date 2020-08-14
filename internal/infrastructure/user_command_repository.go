@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	"context"
-	"github.com/alexandria-oss/identity-api/internal/common"
+	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/aws/aws-sdk-go/aws"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"sync"
@@ -10,11 +10,11 @@ import (
 
 type UserCommandAWSRepository struct {
 	client *cognito.CognitoIdentityProvider
-	kernel common.KernelStore
+	kernel domain.KernelStore
 	mu     *sync.RWMutex
 }
 
-func NewUserCommandAWSRepository(c *cognito.CognitoIdentityProvider, k common.KernelStore) *UserCommandAWSRepository {
+func NewUserCommandAWSRepository(c *cognito.CognitoIdentityProvider, k domain.KernelStore) *UserCommandAWSRepository {
 	return &UserCommandAWSRepository{
 		client: c,
 		kernel: k,

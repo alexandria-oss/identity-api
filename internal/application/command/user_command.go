@@ -2,14 +2,14 @@ package command
 
 import (
 	"context"
-	"github.com/alexandria-oss/identity-api/internal/domain"
+	"github.com/alexandria-oss/identity-api/internal/domain/user"
 )
 
 type UserCommandImp struct {
-	repository domain.UserCommandRepository
+	repository user.UserCommandRepository
 }
 
-func NewUserCommand(r domain.UserCommandRepository) *UserCommandImp {
+func NewUserCommand(r user.UserCommandRepository) *UserCommandImp {
 	return &UserCommandImp{
 		repository: r,
 	}

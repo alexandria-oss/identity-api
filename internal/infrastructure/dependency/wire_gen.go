@@ -6,12 +6,12 @@
 package dependency
 
 import (
-	"github.com/alexandria-oss/identity-api/internal/command"
-	"github.com/alexandria-oss/identity-api/internal/common"
+	"github.com/alexandria-oss/identity-api/internal/application/command"
+	"github.com/alexandria-oss/identity-api/internal/application/query"
 	"github.com/alexandria-oss/identity-api/internal/domain"
+	"github.com/alexandria-oss/identity-api/internal/domain/user"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/driver"
-	"github.com/alexandria-oss/identity-api/internal/query"
 	"github.com/google/wire"
 )
 
@@ -19,7 +19,7 @@ import (
 
 func InjectUserQuery() *query.UserQueryImp {
 	cognitoIdentityProvider := driver.NewCognitoSession()
-	kernelStore := common.NewKernelStore()
+	kernelStore := domain.NewKernelStore()
 	userQueryAWSRepository := infrastructure.NewUserQueryAWSRepository(cognitoIdentityProvider, kernelStore)
 	userQueryImp := query.NewUserQuery(userQueryAWSRepository)
 	return userQueryImp
@@ -27,7 +27,7 @@ func InjectUserQuery() *query.UserQueryImp {
 
 func InjectUserCommand() *command.UserCommandImp {
 	cognitoIdentityProvider := driver.NewCognitoSession()
-	kernelStore := common.NewKernelStore()
+	kernelStore := domain.NewKernelStore()
 	userCommandAWSRepository := infrastructure.NewUserCommandAWSRepository(cognitoIdentityProvider, kernelStore)
 	userCommandImp := command.NewUserCommand(userCommandAWSRepository)
 	return userCommandImp
@@ -35,4 +35,4 @@ func InjectUserCommand() *command.UserCommandImp {
 
 // wire.go:
 
-var userQuery = wire.NewSet(common.NewKernelStore, wire.Bind(new(domain.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)), driver.NewCognitoSession, infrastructure.NewUserQueryAWSRepository, query.NewUserQuery)
+var userQuery = wire.NewSet(domain.NewKernelStore, wire.Bind(new(user.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)), driver.NewCognitoSession, infrastructure.NewUserQueryAWSRepository, query.NewUserQuery)

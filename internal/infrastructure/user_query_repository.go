@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/alexandria-oss/common-go/exception"
-	"github.com/alexandria-oss/identity-api/internal/common"
 	"github.com/alexandria-oss/identity-api/internal/domain"
+	"github.com/alexandria-oss/identity-api/internal/domain/user"
 	"github.com/aws/aws-sdk-go/aws"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"sync"
@@ -13,12 +13,12 @@ import (
 
 type UserQueryAWSRepository struct {
 	client *cognito.CognitoIdentityProvider
-	kernel common.KernelStore
+	kernel domain.KernelStore
 	mu     *sync.RWMutex
 }
 
 // Factory Method
-func NewUserQueryAWSRepository(c *cognito.CognitoIdentityProvider, k common.KernelStore) *UserQueryAWSRepository {
+func NewUserQueryAWSRepository(c *cognito.CognitoIdentityProvider, k domain.KernelStore) *UserQueryAWSRepository {
 	return &UserQueryAWSRepository{
 		client: c,
 		kernel: k,
@@ -26,7 +26,7 @@ func NewUserQueryAWSRepository(c *cognito.CognitoIdentityProvider, k common.Kern
 	}
 }
 
-func (r *UserQueryAWSRepository) FetchOne(ctx context.Context, byUsername bool, key string) (*domain.User, error) {
+func (r *UserQueryAWSRepository) FetchOne(ctx context.Context, byUsername bool, key string) (*user.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -52,7 +52,7 @@ func (r *UserQueryAWSRepository) FetchOne(ctx context.Context, byUsername bool, 
 	return mapToUser(o.Users[0]), nil
 }
 
-func (r *UserQueryAWSRepository) Fetch(ctx context.Context, token string, size int, filterMap common.FilterMap) ([]*domain.User, error) {
+func (r *UserQueryAWSRepository) Fetch(ctx context.Context, token string, size int, filterMap domain.FilterMap) ([]*user.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -97,7 +97,7 @@ forLoop:
 		return nil, exception.NewCustomError(exception.NotFound, "users")
 	}
 
-	users := make([]*domain.User, 0)
+	users := make([]*user.User, 0)
 	for _, userCg := range o.Users {
 		user := mapToUser(userCg)
 		users = append(users, user)
@@ -105,14 +105,14 @@ forLoop:
 
 	// Add required next pagination token user
 	if o.PaginationToken != nil && o.PaginationToken != aws.String("") {
-		users = append(users, &domain.User{Sub: *o.PaginationToken})
+		users = append(users, &user.User{Sub: *o.PaginationToken})
 	}
 
 	return users, nil
 }
 
-func mapToUser(userCg *cognito.UserType) *domain.User {
-	user := &domain.User{
+func mapToUser(userCg *cognito.UserType) *user.User {
+	user := &user.User{
 		Sub:        "",
 		Email:      "",
 		Username:   *userCg.Username,
