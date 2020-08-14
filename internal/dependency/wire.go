@@ -17,7 +17,7 @@ var userQuery = wire.NewSet(
 	wire.Bind(new(domain.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)),
 	driver.NewCognitoSession,
 	infrastructure.NewUserQueryAWSRepository,
-	query.NewUserQueryImp,
+	query.NewUserQuery,
 )
 
 func InjectUserQuery() *query.UserQueryImp {

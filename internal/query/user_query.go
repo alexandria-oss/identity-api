@@ -10,7 +10,7 @@ type UserQueryImp struct {
 	repository domain.UserQueryRepository
 }
 
-func NewUserQueryImp(r domain.UserQueryRepository) *UserQueryImp {
+func NewUserQuery(r domain.UserQueryRepository) *UserQueryImp {
 	return &UserQueryImp{
 		repository: r,
 	}

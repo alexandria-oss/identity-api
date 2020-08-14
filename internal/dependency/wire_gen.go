@@ -21,7 +21,7 @@ func InjectUserQuery() *query.UserQueryImp {
 	cognitoIdentityProvider := driver.NewCognitoSession()
 	kernelStore := common.NewKernelStore()
 	userQueryAWSRepository := infrastructure.NewUserQueryAWSRepository(cognitoIdentityProvider, kernelStore)
-	userQueryImp := query.NewUserQueryImp(userQueryAWSRepository)
+	userQueryImp := query.NewUserQuery(userQueryAWSRepository)
 	return userQueryImp
 }
 
@@ -35,4 +35,4 @@ func InjectUserCommand() *command.UserCommandImp {
 
 // wire.go:
 
-var userQuery = wire.NewSet(common.NewKernelStore, wire.Bind(new(domain.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)), driver.NewCognitoSession, infrastructure.NewUserQueryAWSRepository, query.NewUserQueryImp)
+var userQuery = wire.NewSet(common.NewKernelStore, wire.Bind(new(domain.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)), driver.NewCognitoSession, infrastructure.NewUserQueryAWSRepository, query.NewUserQuery)
