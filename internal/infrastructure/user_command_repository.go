@@ -14,9 +14,9 @@ type UserCommandAWSRepository struct {
 	mu     *sync.RWMutex
 }
 
-func NewUserCommandAWSRepository(k common.KernelStore) *UserCommandAWSRepository {
+func NewUserCommandAWSRepository(c *cognito.CognitoIdentityProvider, k common.KernelStore) *UserCommandAWSRepository {
 	return &UserCommandAWSRepository{
-		client: newCognitoSession(),
+		client: c,
 		kernel: k,
 		mu:     new(sync.RWMutex),
 	}

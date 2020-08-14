@@ -18,9 +18,9 @@ type UserQueryAWSRepository struct {
 }
 
 // Factory Method
-func NewUserQueryAWSRepository(k common.KernelStore) *UserQueryAWSRepository {
+func NewUserQueryAWSRepository(c *cognito.CognitoIdentityProvider, k common.KernelStore) *UserQueryAWSRepository {
 	return &UserQueryAWSRepository{
-		client: newCognitoSession(),
+		client: c,
 		kernel: k,
 		mu:     new(sync.RWMutex),
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/common"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure"
+	"github.com/alexandria-oss/identity-api/internal/infrastructure/driver"
 	"github.com/alexandria-oss/identity-api/internal/query"
 	"github.com/google/wire"
 )
@@ -17,19 +18,21 @@ import (
 // Injectors from wire.go:
 
 func InjectUserQuery() *query.UserQueryImp {
+	cognitoIdentityProvider := driver.NewCognitoSession()
 	kernelStore := common.NewKernelStore()
-	userQueryAWSRepository := infrastructure.NewUserQueryAWSRepository(kernelStore)
+	userQueryAWSRepository := infrastructure.NewUserQueryAWSRepository(cognitoIdentityProvider, kernelStore)
 	userQueryImp := query.NewUserQueryImp(userQueryAWSRepository)
 	return userQueryImp
 }
 
 func InjectUserCommand() *command.UserCommandImp {
+	cognitoIdentityProvider := driver.NewCognitoSession()
 	kernelStore := common.NewKernelStore()
-	userCommandAWSRepository := infrastructure.NewUserCommandAWSRepository(kernelStore)
+	userCommandAWSRepository := infrastructure.NewUserCommandAWSRepository(cognitoIdentityProvider, kernelStore)
 	userCommandImp := command.NewUserCommand(userCommandAWSRepository)
 	return userCommandImp
 }
 
 // wire.go:
 
-var userQuery = wire.NewSet(common.NewKernelStore, wire.Bind(new(domain.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)), infrastructure.NewUserQueryAWSRepository, query.NewUserQueryImp)
+var userQuery = wire.NewSet(common.NewKernelStore, wire.Bind(new(domain.UserQueryRepository), new(*infrastructure.UserQueryAWSRepository)), driver.NewCognitoSession, infrastructure.NewUserQueryAWSRepository, query.NewUserQueryImp)
