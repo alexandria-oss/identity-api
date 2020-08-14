@@ -1,0 +1,7 @@
+alexandria:
+  aws:
+    cognito:
+      user-pool-id: "XXXX"
+      user-secret-key: "XXXX"
+  service: identity
+  version: "1"
