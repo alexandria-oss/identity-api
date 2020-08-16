@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/alexandria-oss/common-go/exception"
 	"github.com/alexandria-oss/identity-api/internal/domain"
+	"github.com/alexandria-oss/identity-api/internal/domain/aggregate"
 	"github.com/alexandria-oss/identity-api/internal/domain/entity"
 	"github.com/aws/aws-sdk-go/aws"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
@@ -61,7 +62,7 @@ func (r *UserAWSRepository) HardRemove(ctx context.Context, id string) error {
 	return err
 }
 
-func (r *UserAWSRepository) FetchOne(ctx context.Context, byUsername bool, key string) (*entity.User, error) {
+func (r *UserAWSRepository) FetchOne(ctx context.Context, byUsername bool, key string) (*aggregate.UserRoot, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -87,7 +88,7 @@ func (r *UserAWSRepository) FetchOne(ctx context.Context, byUsername bool, key s
 	return r.mapToUser(o.Users[0]), nil
 }
 
-func (r *UserAWSRepository) Fetch(ctx context.Context, token string, size int, filterMap domain.FilterMap) ([]*entity.User, error) {
+func (r *UserAWSRepository) Fetch(ctx context.Context, token string, size int, filterMap domain.FilterMap) ([]*aggregate.UserRoot, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -132,7 +133,7 @@ forLoop:
 		return nil, exception.NewCustomError(exception.NotFound, "users")
 	}
 
-	users := make([]*entity.User, 0)
+	users := make([]*aggregate.UserRoot, 0)
 	for _, userCg := range o.Users {
 		user := r.mapToUser(userCg)
 		users = append(users, user)
@@ -140,50 +141,56 @@ forLoop:
 
 	// Add required next pagination token user
 	if o.PaginationToken != nil && o.PaginationToken != aws.String("") {
-		users = append(users, &entity.User{Sub: *o.PaginationToken})
+		users = append(users, &aggregate.UserRoot{
+			Root: &entity.User{
+				Sub: *o.PaginationToken,
+			},
+		})
 	}
 
 	return users, nil
 }
 
-func (r UserAWSRepository) mapToUser(userCg *cognito.UserType) *entity.User {
-	user := &entity.User{
-		Sub:        "",
-		Email:      "",
-		Username:   *userCg.Username,
-		Name:       "",
-		MiddleName: nil,
-		FamilyName: nil,
-		Locale:     "",
-		Picture:    nil,
-		Status:     *userCg.UserStatus,
-		CreateTime: userCg.UserCreateDate,
-		UpdateTime: userCg.UserLastModifiedDate,
-		Enabled:    *userCg.Enabled,
+func (r UserAWSRepository) mapToUser(userCg *cognito.UserType) *aggregate.UserRoot {
+	user := &aggregate.UserRoot{
+		Root: &entity.User{
+			Sub:        "",
+			Email:      "",
+			Username:   *userCg.Username,
+			Name:       "",
+			MiddleName: nil,
+			FamilyName: nil,
+			Locale:     "",
+			Picture:    nil,
+			Status:     *userCg.UserStatus,
+			CreateTime: userCg.UserCreateDate,
+			UpdateTime: userCg.UserLastModifiedDate,
+			Enabled:    *userCg.Enabled,
+		},
 	}
 
 	for _, attr := range userCg.Attributes {
 		switch *attr.Name {
 		case "sub":
-			user.Sub = *attr.Value
+			user.Root.Sub = *attr.Value
 			continue
 		case "email":
-			user.Email = *attr.Value
+			user.Root.Email = *attr.Value
 			continue
 		case "name":
-			user.Name = *attr.Value
+			user.Root.Name = *attr.Value
 			continue
 		case "middle_name":
-			user.MiddleName = attr.Value
+			user.Root.MiddleName = attr.Value
 			continue
 		case "family_name":
-			user.FamilyName = attr.Value
+			user.Root.FamilyName = attr.Value
 			continue
 		case "locale":
-			user.Locale = *attr.Value
+			user.Root.Locale = *attr.Value
 			continue
 		case "picture":
-			user.Picture = attr.Value
+			user.Root.Picture = attr.Value
 			continue
 		}
 	}

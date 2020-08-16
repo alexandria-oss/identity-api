@@ -6,7 +6,7 @@ import (
 )
 
 type UserRoot struct {
-	Root         entity.User
+	Root         *entity.User
 	domainEvents []event.Domain
 }
 
