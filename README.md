@@ -1,5 +1,5 @@
 # Alexandria Identity API
-The Identity API is responsible of read and some few writing operations related to users, special writing operations such as register, sign in and many more must be done using the AWS Cognito client API/SDK directly.
+The Identity API is responsible of reading and some few writing operations related to users, special writing operations such as register, sign in and many more must be done using the AWS Cognito client API/SDK directly.
 
 It uses gRPC, GraphQL and HTTP communication protocols to expose its API.
 
