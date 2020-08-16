@@ -3,5 +3,13 @@ alexandria:
     cognito:
       user-pool-id: "XXXX"
       user-secret-key: "XXXX"
+  persistence:
+    cache:
+      address:
+      - localhost:6379
+      database: 0
+      network: tcp
+      password: ""
+      username: ""
   service: identity
   version: "1"
