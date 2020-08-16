@@ -1,6 +1,7 @@
 package aggregate
 
 import (
+	"encoding/json"
 	"github.com/alexandria-oss/identity-api/internal/domain/entity"
 	"github.com/alexandria-oss/identity-api/internal/domain/event"
 )
@@ -16,4 +17,12 @@ func (r *UserRoot) PullDomainEvents() []event.Domain {
 
 func (r *UserRoot) Record(e event.Domain) {
 	r.domainEvents = append(r.domainEvents, e)
+}
+
+func (r *UserRoot) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, r)
+}
+
+func (r *UserRoot) MarshalBinary() ([]byte, error) {
+	return json.Marshal(r)
 }

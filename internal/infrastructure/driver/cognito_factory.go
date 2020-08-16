@@ -11,9 +11,11 @@ var cognitoSingleton = new(sync.Once)
 
 // Generate a new cognito client session using shared credentials at ~/.aws
 func NewCognitoSession() *cognito.CognitoIdentityProvider {
-	cognitoSingleton.Do(func() {
-		cognitoPool = cognito.New(session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable})))
-	})
+	if cognitoPool == nil {
+		cognitoSingleton.Do(func() {
+			cognitoPool = cognito.New(session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable})))
+		})
+	}
 
 	return cognitoPool
 }

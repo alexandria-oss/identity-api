@@ -3,35 +3,51 @@
 package dependency
 
 import (
+	"context"
 	"github.com/alexandria-oss/identity-api/internal/application/command/cmdhandler"
 	"github.com/alexandria-oss/identity-api/internal/application/query"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/domain/repository"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/driver"
+	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence"
+	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence/mw"
+	"github.com/go-redis/redis/v8"
 	"github.com/google/wire"
+	log "github.com/sirupsen/logrus"
 )
 
-var userQuery = wire.NewSet(
+var ctx = context.Background()
+
+var dataSet = wire.NewSet(
 	domain.NewKernelStore,
-	wire.Bind(new(repository.User), new(*persistence.UserAWSRepository)),
+	logging.NewLogger,
+	provideContext,
+	driver.NewRedisClientPool,
 	driver.NewCognitoSession,
 	persistence.NewUserAWSRepository,
-	query.NewUserQuery,
+	provideUserRepository,
 )
 
-func InjectUserQuery() *query.UserQueryImp {
-	wire.Build(userQuery)
-	return &query.UserQueryImp{}
+func SetContext(parentCtx context.Context) {
+	ctx = parentCtx
 }
 
-func InjectUserCommandHandler() *cmdhandler.UserImp {
-	wire.Build(
-		domain.NewKernelStore,
-		wire.Bind(new(repository.User), new(*persistence.UserAWSRepository)),
-		driver.NewCognitoSession,
-		persistence.NewUserAWSRepository,
-		cmdhandler.NewUserCommandHandler,
-	)
-	return &cmdhandler.UserImp{}
+func provideContext() context.Context {
+	return ctx
+}
+
+func provideUserRepository(r *persistence.UserAWSRepository, p *redis.Client, k domain.KernelStore,
+	l *log.Logger) repository.User {
+	return mw.WrapUserRepository(r, p, k, l)
+}
+
+func InjectUserQuery() (*query.UserQueryImp, func()) {
+	wire.Build(dataSet, query.NewUserQuery)
+	return &query.UserQueryImp{}, func() {}
+}
+
+func InjectUserCommandHandler() (*cmdhandler.UserHandlerImp, func()) {
+	wire.Build(dataSet, cmdhandler.NewUserCommandHandler)
+	return &cmdhandler.UserHandlerImp{}, func() {}
 }
