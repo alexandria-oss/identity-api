@@ -8,6 +8,7 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 )
 
+// Integration testing
 func main() {
 	ctx := context.Background()
 	logger := logging.NewLogger()
