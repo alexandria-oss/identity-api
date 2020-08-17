@@ -11,6 +11,7 @@ import (
 func main() {
 	ctx := context.Background()
 	logger := logging.NewLogger()
+	dependency.SetContext(ctx)
 	usrQuery, cleanup := dependency.InjectUserQuery()
 	defer cleanup()
 
