@@ -7,12 +7,12 @@ type User struct {
 	Username   string     `json:"username"`
 	Email      string     `json:"email"`
 	Name       string     `json:"name"`
-	MiddleName *string    `json:"middle_name"`
-	FamilyName *string    `json:"family_name"`
+	MiddleName *string    `json:"middle_name,omitempty"`
+	FamilyName *string    `json:"family_name,omitempty"`
 	Locale     string     `json:"locale"`
-	Picture    *string    `json:"picture"`
+	Picture    *string    `json:"picture,omitempty"`
 	Status     string     `json:"status"`
-	CreateTime *time.Time `json:"create_time"`
-	UpdateTime *time.Time `json:"update_time"`
+	CreateTime *time.Time `json:"create_time,omitempty"`
+	UpdateTime *time.Time `json:"update_time,omitempty"`
 	Enabled    bool       `json:"enabled"`
 }

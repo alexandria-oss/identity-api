@@ -88,18 +88,18 @@ func (r *UserAWSRepository) FetchOne(ctx context.Context, byUsername bool, key s
 	return r.mapToUser(o.Users[0]), nil
 }
 
-func (r *UserAWSRepository) Fetch(ctx context.Context, token string, size int, filterMap domain.FilterMap) ([]*aggregate.UserRoot, error) {
+func (r *UserAWSRepository) Fetch(ctx context.Context, criteria domain.Criteria) ([]*aggregate.UserRoot, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	var tokenStr *string = nil
-	if token != "" {
-		tokenStr = aws.String(token)
+	if criteria.Token != "" {
+		tokenStr = aws.String(string(criteria.Token))
 	}
 
 	var statement *string = nil
 forLoop:
-	for k, v := range filterMap {
+	for k, v := range criteria.FilterBy {
 		switch {
 		case k == "name" && v != "":
 			statement = aws.String(fmt.Sprintf("name ^= \"%s\"", v))
@@ -122,7 +122,7 @@ forLoop:
 	o, err := r.client.ListUsersWithContext(ctx, &cognito.ListUsersInput{
 		AttributesToGet: nil,
 		Filter:          statement,
-		Limit:           aws.Int64(int64(size - 1)),
+		Limit:           aws.Int64(int64(criteria.Limit - 1)),
 		PaginationToken: tokenStr,
 		UserPoolId:      aws.String(r.kernel.Config.Cognito.UserPoolID),
 	})

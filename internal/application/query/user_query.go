@@ -22,13 +22,13 @@ func (q *UserQueryImp) Get(ctx context.Context, username string) (*aggregate.Use
 	return q.repository.FetchOne(ctxI, true, username)
 }
 
-func (q *UserQueryImp) List(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot,
+func (q *UserQueryImp) List(ctx context.Context, criteria *domain.Criteria) (users []*aggregate.UserRoot,
 	nextToken domain.PaginationToken, err error) {
 	// Request next token
-	nextSize := criteria.Limit + 1
+	criteria.Limit = criteria.Limit + 1
 
 	ctxI, _ := context.WithCancel(ctx)
-	users, err = q.repository.Fetch(ctxI, criteria.Token.GetPrimitive(), nextSize.GetPrimitive(), criteria.FilterBy)
+	users, err = q.repository.Fetch(ctxI, *criteria)
 	if err != nil {
 		return
 	}
