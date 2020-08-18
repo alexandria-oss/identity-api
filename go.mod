@@ -8,6 +8,7 @@ require (
 	github.com/go-redis/redis/v8 v8.0.0-beta.7
 	github.com/google/uuid v1.1.1
 	github.com/google/wire v0.4.0
+	github.com/prometheus/client_golang v1.7.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/viper v1.7.1
 	go.opencensus.io v0.22.4
