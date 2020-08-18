@@ -10,17 +10,21 @@ import (
 
 // HoC-like repository wrapping with chain of responsibility pattern
 func WrapUserRepository(r repository.User, p *redis.Client, k domain.KernelStore, l *log.Logger) repository.User {
-	var wrappedRepo repository.User
-	wrappedRepo = r
+	var repo repository.User
+	repo = r
+	repo = UserRepositoryTracing{
+		Next: repo,
+	}
+
 	if p != nil {
-		wrappedRepo = UserRepositoryCache{
+		repo = UserRepositoryCache{
 			DB:     p,
 			Kernel: k,
 			Logger: l,
 			Mu:     new(sync.RWMutex),
-			Next:   r,
+			Next:   repo,
 		}
 	}
 
-	return wrappedRepo
+	return repo
 }
