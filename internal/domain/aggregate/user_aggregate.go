@@ -26,3 +26,7 @@ func (r *UserRoot) UnmarshalBinary(data []byte) error {
 func (r *UserRoot) MarshalBinary() ([]byte, error) {
 	return json.Marshal(r)
 }
+
+func (r *UserRoot) GetRoot() interface{} {
+	return r.Root
+}

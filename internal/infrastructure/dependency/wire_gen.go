@@ -15,7 +15,6 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence/mw"
-	"github.com/go-redis/redis/v8"
 	"github.com/google/wire"
 	"github.com/sirupsen/logrus"
 )
@@ -29,7 +28,9 @@ func InjectUserQuery() (*query.UserQueryImp, func()) {
 	context := provideContext()
 	logger := logging.NewLogger()
 	client, cleanup := driver.NewRedisClientPool(context, kernelStore, logger)
-	user := provideUserRepository(userAWSRepository, client, kernelStore, logger)
+	cacheRedis := persistence.NewCacheRedis(client)
+	cache := provideCacheRepository(cacheRedis, logger)
+	user := provideUserRepository(userAWSRepository, cache, logger)
 	userQueryImp := query.NewUserQuery(user)
 	return userQueryImp, func() {
 		cleanup()
@@ -43,7 +44,9 @@ func InjectUserCommandHandler() (*cmdhandler.UserHandlerImp, func()) {
 	context := provideContext()
 	logger := logging.NewLogger()
 	client, cleanup := driver.NewRedisClientPool(context, kernelStore, logger)
-	user := provideUserRepository(userAWSRepository, client, kernelStore, logger)
+	cacheRedis := persistence.NewCacheRedis(client)
+	cache := provideCacheRepository(cacheRedis, logger)
+	user := provideUserRepository(userAWSRepository, cache, logger)
 	userHandlerImp := cmdhandler.NewUserCommandHandler(user)
 	return userHandlerImp, func() {
 		cleanup()
@@ -54,7 +57,7 @@ func InjectUserCommandHandler() (*cmdhandler.UserHandlerImp, func()) {
 
 var ctx = context.Background()
 
-var dataSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, provideContext, driver.NewRedisClientPool, driver.NewCognitoSession, persistence.NewUserAWSRepository, provideUserRepository)
+var dataSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, provideContext, driver.NewRedisClientPool, persistence.NewCacheRedis, provideCacheRepository, driver.NewCognitoSession, persistence.NewUserAWSRepository, provideUserRepository)
 
 func SetContext(parentCtx context.Context) {
 	ctx = parentCtx
@@ -64,7 +67,10 @@ func provideContext() context.Context {
 	return ctx
 }
 
-func provideUserRepository(r *persistence.UserAWSRepository, p *redis.Client, k domain.KernelStore,
-	l *logrus.Logger) repository.User {
-	return mw.WrapUserRepository(r, p, k, l)
+func provideCacheRepository(r *persistence.CacheRedis, logger *logrus.Logger) repository.Cache {
+	return mw.WrapCacheRepository(r, logger)
+}
+
+func provideUserRepository(r *persistence.UserAWSRepository, c repository.Cache, l *logrus.Logger) repository.User {
+	return mw.WrapUserRepository(r, c, l)
 }

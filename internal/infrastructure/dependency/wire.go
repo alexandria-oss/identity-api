@@ -12,7 +12,6 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/persistence/mw"
-	"github.com/go-redis/redis/v8"
 	"github.com/google/wire"
 	log "github.com/sirupsen/logrus"
 )
@@ -24,6 +23,8 @@ var dataSet = wire.NewSet(
 	logging.NewLogger,
 	provideContext,
 	driver.NewRedisClientPool,
+	persistence.NewCacheRedis,
+	provideCacheRepository,
 	driver.NewCognitoSession,
 	persistence.NewUserAWSRepository,
 	provideUserRepository,
@@ -37,9 +38,12 @@ func provideContext() context.Context {
 	return ctx
 }
 
-func provideUserRepository(r *persistence.UserAWSRepository, p *redis.Client, k domain.KernelStore,
-	l *log.Logger) repository.User {
-	return mw.WrapUserRepository(r, p, k, l)
+func provideCacheRepository(r *persistence.CacheRedis, logger *log.Logger) repository.Cache {
+	return mw.WrapCacheRepository(r, logger)
+}
+
+func provideUserRepository(r *persistence.UserAWSRepository, c repository.Cache, l *log.Logger) repository.User {
+	return mw.WrapUserRepository(r, c, l)
 }
 
 func InjectUserQuery() (*query.UserQueryImp, func()) {
