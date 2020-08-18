@@ -22,11 +22,13 @@ var userTable = "user"
 // Read -> Cache aside/Write through pattern(s)
 
 func (u UserRepositoryCache) Remove(ctx context.Context, id string) (err error) {
+	defer func() {
+		if err == nil {
+			_ = u.Repo.Invalidate(ctx, userTable, id)
+		}
+	}()
+
 	err = u.Next.Remove(ctx, id)
-	if err == nil {
-		// Removal done, Invalidate cache
-		_ = u.Repo.Invalidate(ctx, userTable, id)
-	}
 	return
 }
 
@@ -40,11 +42,13 @@ func (u UserRepositoryCache) Restore(ctx context.Context, id string) (err error)
 }
 
 func (u UserRepositoryCache) HardRemove(ctx context.Context, id string) (err error) {
+	defer func() {
+		if err == nil {
+			_ = u.Repo.Invalidate(ctx, userTable, id)
+		}
+	}()
+
 	err = u.Next.HardRemove(ctx, id)
-	if err == nil {
-		// Removal done, Invalidate cache
-		_ = u.Repo.Invalidate(ctx, userTable, id)
-	}
 	return
 }
 
@@ -57,9 +61,13 @@ func (u UserRepositoryCache) FetchOne(ctx context.Context, byUsername bool, key 
 		}
 	}
 
+	defer func() {
+		if err == nil && user != nil {
+			// Write-through
+			_ = u.Repo.Write(ctx, userTable, key, user, time.Minute*30)
+		}
+	}()
 	user, err = u.Next.FetchOne(ctx, byUsername, key)
-	// Write-through
-	_ = u.Repo.Write(ctx, userTable, key, user, time.Minute*30)
 	return
 }
 
@@ -73,12 +81,16 @@ func (u UserRepositoryCache) Fetch(ctx context.Context, criteria domain.Criteria
 		}
 	}
 
+	defer func() {
+		// Write-through
+		if err == nil && len(users) > 0 {
+			if usersJSON, errJSON := json.Marshal(users); errJSON == nil {
+				_ = u.Repo.Write(ctx, userTable, encodedCriteria, usersJSON, time.Minute*10)
+			}
+		}
+	}()
 	// If not available, execute query in real db
 	users, err = u.Next.Fetch(ctx, criteria)
-	// Apply write through strategy
-	if usersJSON, errJSON := json.Marshal(users); errJSON == nil {
-		_ = u.Repo.Write(ctx, userTable, encodedCriteria, usersJSON, time.Minute*10)
-	}
 	return
 }
 
