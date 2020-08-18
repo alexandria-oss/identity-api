@@ -140,6 +140,9 @@ forLoop:
 		case k == "locale" && v != "":
 			statement = aws.String(fmt.Sprintf("locale ^= \"%s\"", v))
 			break forLoop
+		case k == "disabled" && v != "":
+			statement = aws.String(fmt.Sprintf("enabled = false"))
+			break forLoop
 		}
 	}
 

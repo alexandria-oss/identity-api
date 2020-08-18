@@ -19,12 +19,14 @@ Alexandria is currently licensed under the MIT license.
 ### Accepted Queries
 The list method accepts multiple queries to make data fetching easier for everyone.
 
-The following fields are accepted by our service.
+The following fields are accepted by the service.
 - page_token = string
 - page_size = int32 (min. 1, max. 100)
-- query = string
-- filter_by = string (id or timestamp)
-- sort = string (asc or desc)
+- name = string
+- email = string
+- middle_name = string
+- family_name = string
+- locale = string
 - show_disabled = boolean
 
 
