@@ -26,7 +26,7 @@ func (c CacheLog) Write(ctx context.Context, table, key string, value interface{
 				"caller": "kernel.repository.cache",
 				"table":  table,
 				"key":    key,
-			}).Debug("cached value")
+			}).Info("cached value")
 		}
 	}()
 	err = c.Next.Write(ctx, table, key, value, duration)
