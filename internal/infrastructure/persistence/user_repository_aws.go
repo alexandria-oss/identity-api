@@ -34,8 +34,16 @@ func (r *UserAWSRepository) Remove(ctx context.Context, id string) error {
 		UserPoolId: aws.String(r.kernel.Config.Cognito.UserPoolID),
 		Username:   aws.String(id),
 	})
+	if err != nil {
+		switch err.Error() {
+		case cognito.ErrCodeUserNotFoundException:
+			return exception.NewCustomError(exception.NotFound, "user")
+		default:
+			return err
+		}
+	}
 
-	return err
+	return nil
 }
 
 func (r *UserAWSRepository) Restore(ctx context.Context, id string) error {
@@ -46,8 +54,16 @@ func (r *UserAWSRepository) Restore(ctx context.Context, id string) error {
 		UserPoolId: aws.String(r.kernel.Config.Cognito.UserPoolID),
 		Username:   aws.String(id),
 	})
+	if err != nil {
+		switch err.Error() {
+		case cognito.ErrCodeUserNotFoundException:
+			return exception.NewCustomError(exception.NotFound, "user")
+		default:
+			return err
+		}
+	}
 
-	return err
+	return nil
 }
 
 func (r *UserAWSRepository) HardRemove(ctx context.Context, id string) error {
@@ -58,8 +74,16 @@ func (r *UserAWSRepository) HardRemove(ctx context.Context, id string) error {
 		UserPoolId: aws.String(r.kernel.Config.Cognito.UserPoolID),
 		Username:   aws.String(id),
 	})
+	if err != nil {
+		switch err.Error() {
+		case cognito.ErrCodeUserNotFoundException:
+			return exception.NewCustomError(exception.NotFound, "user")
+		default:
+			return err
+		}
+	}
 
-	return err
+	return nil
 }
 
 func (r *UserAWSRepository) FetchOne(ctx context.Context, byUsername bool, key string) (*aggregate.UserRoot, error) {
