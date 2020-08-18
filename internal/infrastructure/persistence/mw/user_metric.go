@@ -31,7 +31,7 @@ func init() {
 			Namespace:   "alexandria",
 			Subsystem:   "identity",
 			Name:        "user_repository_usage",
-			Help:        "user repository global usage percentage",
+			Help:        "user repository global concurrent usage",
 			ConstLabels: nil,
 		})
 		errCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -63,30 +63,35 @@ func init() {
 }
 
 func (u UserRepositoryMetric) Remove(ctx context.Context, id string) (err error) {
+	usageGauge.Inc()
 	defer u.injectMetrics("remove", time.Now(), err)
 	err = u.Next.Remove(ctx, id)
 	return
 }
 
 func (u UserRepositoryMetric) Restore(ctx context.Context, id string) (err error) {
+	usageGauge.Inc()
 	defer u.injectMetrics("restore", time.Now(), err)
 	err = u.Next.Restore(ctx, id)
 	return
 }
 
 func (u UserRepositoryMetric) HardRemove(ctx context.Context, id string) (err error) {
+	usageGauge.Inc()
 	defer u.injectMetrics("hardRemove", time.Now(), err)
 	err = u.Next.Remove(ctx, id)
 	return
 }
 
 func (u UserRepositoryMetric) FetchOne(ctx context.Context, byUsername bool, key string) (user *aggregate.UserRoot, err error) {
+	usageGauge.Inc()
 	defer u.injectMetrics("fetchOne", time.Now(), err)
 	user, err = u.Next.FetchOne(ctx, byUsername, key)
 	return
 }
 
 func (u UserRepositoryMetric) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot, err error) {
+	usageGauge.Inc()
 	defer u.injectMetrics("fetch", time.Now(), err)
 	users, err = u.Next.Fetch(ctx, criteria)
 	return
@@ -102,5 +107,5 @@ func (u UserRepositoryMetric) injectMetrics(caller string, begin time.Time, err 
 	}
 	hitCounter.With(lvs).Inc()
 	hitDuration.With(lvs).Observe(time.Since(begin).Seconds())
-	usageGauge.Inc()
+	usageGauge.Dec()
 }
