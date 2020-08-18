@@ -19,8 +19,8 @@ func WrapUserRepository(r repository.User, c repository.Cache, l *log.Logger) re
 	repo = r
 	if c != nil {
 		repo = UserRepositoryCache{
-			Repo: c,
-			Next: repo,
+			Cache: c,
+			Next:  repo,
 		}
 	}
 	repo = UserRepositoryMetric{

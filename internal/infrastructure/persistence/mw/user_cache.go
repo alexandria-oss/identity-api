@@ -12,8 +12,8 @@ import (
 )
 
 type UserRepositoryCache struct {
-	Repo repository.Cache
-	Next repository.User
+	Cache repository.Cache
+	Next  repository.User
 }
 
 var userTable = "user"
@@ -24,7 +24,7 @@ var userTable = "user"
 func (u UserRepositoryCache) Remove(ctx context.Context, id string) (err error) {
 	defer func() {
 		if err == nil {
-			_ = u.Repo.Invalidate(ctx, userTable, id)
+			_ = u.Cache.Invalidate(ctx, userTable, id)
 		}
 	}()
 
@@ -36,7 +36,7 @@ func (u UserRepositoryCache) Restore(ctx context.Context, id string) (err error)
 	err = u.Next.Restore(ctx, id)
 	if err == nil {
 		// Removal done, Invalidate cache
-		_ = u.Repo.Invalidate(ctx, userTable, id)
+		_ = u.Cache.Invalidate(ctx, userTable, id)
 	}
 	return
 }
@@ -44,7 +44,7 @@ func (u UserRepositoryCache) Restore(ctx context.Context, id string) (err error)
 func (u UserRepositoryCache) HardRemove(ctx context.Context, id string) (err error) {
 	defer func() {
 		if err == nil {
-			_ = u.Repo.Invalidate(ctx, userTable, id)
+			_ = u.Cache.Invalidate(ctx, userTable, id)
 		}
 	}()
 
@@ -54,7 +54,7 @@ func (u UserRepositoryCache) HardRemove(ctx context.Context, id string) (err err
 
 func (u UserRepositoryCache) FetchOne(ctx context.Context, byUsername bool, key string) (user *aggregate.UserRoot, err error) {
 	// Cache-aside
-	if res, errR := u.Repo.Read(ctx, userTable, key); errR == nil && res != "" {
+	if res, errR := u.Cache.Read(ctx, userTable, key); errR == nil && res != "" {
 		user = new(aggregate.UserRoot)
 		if errJSON := user.UnmarshalBinary([]byte(res)); errJSON == nil {
 			return
@@ -64,7 +64,7 @@ func (u UserRepositoryCache) FetchOne(ctx context.Context, byUsername bool, key 
 	defer func() {
 		if err == nil && user != nil {
 			// Write-through
-			_ = u.Repo.Write(ctx, userTable, key, user, time.Minute*30)
+			_ = u.Cache.Write(ctx, userTable, key, user, time.Minute*30)
 		}
 	}()
 	user, err = u.Next.FetchOne(ctx, byUsername, key)
@@ -74,7 +74,7 @@ func (u UserRepositoryCache) FetchOne(ctx context.Context, byUsername bool, key 
 func (u UserRepositoryCache) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot, err error) {
 	// Hash params and queries into single string -> KEY = service:hashed_query - VAL []UserRoot (cache query strategy)
 	encodedCriteria := u.hashCriteria(criteria)
-	if res, errR := u.Repo.Read(ctx, userTable, encodedCriteria); errR == nil && res != "" {
+	if res, errR := u.Cache.Read(ctx, userTable, encodedCriteria); errR == nil && res != "" {
 		users = make([]*aggregate.UserRoot, 0)
 		if errJSON := json.Unmarshal([]byte(res), &users); errJSON == nil {
 			return
@@ -85,7 +85,7 @@ func (u UserRepositoryCache) Fetch(ctx context.Context, criteria domain.Criteria
 		// Write-through
 		if err == nil && len(users) > 0 {
 			if usersJSON, errJSON := json.Marshal(users); errJSON == nil {
-				_ = u.Repo.Write(ctx, userTable, encodedCriteria, usersJSON, time.Minute*10)
+				_ = u.Cache.Write(ctx, userTable, encodedCriteria, usersJSON, time.Minute*10)
 			}
 		}
 	}()
