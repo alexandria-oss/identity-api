@@ -20,7 +20,7 @@ func (c CacheLog) Write(ctx context.Context, table, key string, value interface{
 				"table":  table,
 				"key":    key,
 				"detail": err.Error(),
-			}).Error("failed to write cache")
+			}).Warn("failed to write cache")
 		} else {
 			c.Logger.WithFields(log.Fields{
 				"caller": "kernel.repository.cache",
@@ -45,7 +45,7 @@ func (c CacheLog) Invalidate(ctx context.Context, table, key string) (err error)
 				"table":  table,
 				"key":    key,
 				"detail": err.Error(),
-			}).Error("failed to invalidate cache")
+			}).Warn("failed to invalidate cache")
 		}
 	}()
 
