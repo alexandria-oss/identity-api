@@ -14,8 +14,21 @@
 
 package main
 
-import "log"
+import (
+	"context"
+	"github.com/alexandria-oss/identity-api/internal/infrastructure/dependency"
+	"github.com/alexandria-oss/identity-api/pkg/dep"
+)
 
 func main() {
-	log.Print("hello from prod stage")
+	ctx := context.Background()
+	dep.SetContext(ctx)
+	dependency.SetContext(ctx)
+	server, cleanup, err := dep.InjectHTTP()
+	if err != nil {
+		panic(err)
+	}
+	defer cleanup()
+
+	panic(server.GetServer().ListenAndServe())
 }
