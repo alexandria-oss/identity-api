@@ -1,8 +1,11 @@
 alexandria:
+  service: identity
+  version: "1"
+  api-version: v1
   aws:
     cognito:
-      user-pool-id: "XXXX"
-      user-secret-key: "XXXX"
+      user-pool-id: ""
+      user-secret-key: ""
   persistence:
     cache:
       address:
@@ -11,5 +14,12 @@ alexandria:
       network: tcp
       password: ""
       username: ""
-  service: identity
-  version: "1"
+  tracing:
+    jaeger:
+      agent: localhost:6831
+      collector: http://localhost:14268/api/traces
+      password: ""
+      username: ""
+  transport:
+    http:
+      address: localhost:8080
