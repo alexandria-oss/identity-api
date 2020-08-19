@@ -91,6 +91,9 @@ func (s *HTTPServer) AddHandlers(hs ...Handler) {
 // MapRoutes Runtime HTTPServer handler mapping to internal mux
 func (s *HTTPServer) MapRoutes() {
 	public := s.router.PathPrefix("/" + s.kernel.APIVersion).Subrouter()
+	// Inject OpenCensus distributed tracing in public router
+	// Note: This is done here to avoid Health Check and metric endpoints getting traced
+	public.Use(observability.TraceHTTP())
 	for _, h := range s.handlers {
 		h.SetRoutes(public)
 		s.logger.WithField("caller", "transport.http.routing").
@@ -112,7 +115,6 @@ func (s HTTPServer) setMiddlewares() {
 		muxhandlers.AllowedOrigins([]string{"*"}),
 	))
 	s.router.Use(muxhandlers.CompressHandler)
-	s.router.Use(observability.TraceHTTP())
 	s.router.Use(resiliency.RateLimit)
 }
 
