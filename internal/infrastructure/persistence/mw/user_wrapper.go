@@ -3,7 +3,10 @@ package mw
 import (
 	"github.com/alexandria-oss/identity-api/internal/domain/repository"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
+
+var logger *log.Logger
 
 // HoC-like repository wrapping using the chain of responsibility pattern.
 // This wraps required layers to any repository's endpoint such as:
@@ -23,6 +26,7 @@ func WrapUserRepository(r repository.User, c repository.Cache, l *log.Logger) re
 			Next:  repo,
 		}
 	}
+	logger = l
 	repo = UserRepositoryMetric{
 		Next: repo,
 	}
@@ -31,4 +35,15 @@ func WrapUserRepository(r repository.User, c repository.Cache, l *log.Logger) re
 	}
 
 	return repo
+}
+
+func failedMetricRegistry(name string, err error) {
+	if err != nil {
+		logger.WithFields(log.Fields{
+			"caller":    "kernel.repository.factory",
+			"collector": strings.ToLower(name),
+			"kind":      "prometheus",
+			"detail":    err.Error(),
+		}).Warnf("metric collector '%s' registry failed", strings.ToLower(name))
+	}
 }

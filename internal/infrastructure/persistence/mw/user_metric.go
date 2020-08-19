@@ -59,7 +59,15 @@ func init() {
 			AgeBuckets:  0,
 			BufCap:      0,
 		}, labels)
+		registerMetrics()
 	})
+}
+
+func registerMetrics() {
+	failedMetricRegistry("user_repository_usage", prometheus.Register(usageGauge))
+	failedMetricRegistry("user_repository_error_count", prometheus.Register(errCounter))
+	failedMetricRegistry("user_repository_hit_count", prometheus.Register(hitCounter))
+	failedMetricRegistry("user_repository_hit_duration", prometheus.Register(hitDuration))
 }
 
 func (u UserRepositoryMetric) Remove(ctx context.Context, id string) (err error) {
