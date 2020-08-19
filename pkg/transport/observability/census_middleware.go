@@ -20,7 +20,7 @@ import (
 	"net/http"
 )
 
-func Trace(h http.HandlerFunc, isPublic bool) http.Handler {
+func TraceHTTP(h http.HandlerFunc, isPublic bool) http.Handler {
 	return &ochttp.Handler{
 		Propagation:      nil,
 		Handler:          h,

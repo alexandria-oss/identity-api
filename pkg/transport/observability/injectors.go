@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-func InjectPrometheusExporter(k domain.KernelStore) (*ocprom.Exporter, error) {
+func InjectPrometheusHTTP(k domain.KernelStore) (*ocprom.Exporter, error) {
 	err := view.Register(
 		ochttp.ServerLatencyView,
 		ochttp.ServerRequestBytesView,
@@ -55,7 +55,7 @@ func InjectPrometheusExporter(k domain.KernelStore) (*ocprom.Exporter, error) {
 	return pe, nil
 }
 
-func InjectJaegerExporter(k domain.KernelStore) (*jaeger.Exporter, error) {
+func InjectJaegerHTTP(k domain.KernelStore) (*jaeger.Exporter, error) {
 	je, err := jaeger.NewExporter(jaeger.Options{
 		CollectorEndpoint: k.Config.Tracing.Collector,
 		AgentEndpoint:     k.Config.Tracing.Agent,

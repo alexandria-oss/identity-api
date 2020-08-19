@@ -35,7 +35,7 @@ type HTTPServer struct {
 }
 
 // NewHTTPServer HTTPServer factory method - Create a new preconfigured HTTP Server instance
-func NewHTTPServer(k domain.KernelStore, l *log.Logger) (*HTTPServer, error) {
+func NewHTTPServer(k domain.KernelStore, l *log.Logger, handlers ...Handler) (*HTTPServer, error) {
 	srv := &HTTPServer{
 		server: nil,
 		kernel: k,
@@ -52,6 +52,9 @@ func NewHTTPServer(k domain.KernelStore, l *log.Logger) (*HTTPServer, error) {
 	if err := srv.injectTracing(); err != nil {
 		return nil, err
 	}
+
+	srv.AddHandlers(handlers...)
+	srv.MapRoutes()
 
 	srv.server = &http.Server{
 		Addr:              k.Config.Transport.HTTP.Address,
@@ -90,7 +93,7 @@ func (s *HTTPServer) MapRoutes() {
 	for _, h := range s.handlers {
 		h.SetRoutes(public)
 		s.logger.WithField("caller", "transport.http.routing").
-			Info(fmt.Sprintf("route %s mapped to public router ('/%s')", h.GetName(), s.kernel.APIVersion))
+			Info(fmt.Sprintf("route '/%s' mapped to public router ('/%s')", h.GetName(), s.kernel.APIVersion))
 	}
 }
 
@@ -111,7 +114,7 @@ func (s HTTPServer) setMiddlewares() {
 }
 
 func (s HTTPServer) injectMetrics() error {
-	pe, err := observability.InjectPrometheusExporter(s.kernel)
+	pe, err := observability.InjectPrometheusHTTP(s.kernel)
 	if err != nil {
 		s.logger.WithFields(log.Fields{
 			"caller": "transport.http.metrics",
@@ -124,7 +127,7 @@ func (s HTTPServer) injectMetrics() error {
 }
 
 func (s HTTPServer) injectTracing() error {
-	_, err := observability.InjectJaegerExporter(s.kernel)
+	_, err := observability.InjectJaegerHTTP(s.kernel)
 	if err != nil {
 		s.logger.WithFields(log.Fields{
 			"caller": "transport.http.tracing",

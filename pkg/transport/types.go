@@ -16,6 +16,7 @@ package transport
 
 import "github.com/gorilla/mux"
 
+// Handler HTTP handler container/mediator
 type Handler interface {
 	SetRoutes(r *mux.Router)
 	GetName() string
