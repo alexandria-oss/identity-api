@@ -1,3 +1,17 @@
+// Copyright 2020 The Alexandria Foundation
+//
+// Licensed under the GNU Affero General Public License, Version 3.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.gnu.org/licenses/agpl-3.0.en.html
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package handler
 
 import (
@@ -6,16 +20,17 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/domain/aggregate"
 	"github.com/alexandria-oss/identity-api/pkg/service"
-	"github.com/alexandria-oss/identity-api/pkg/transport/observability"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
+// User HTTP transport.Handler container
 type User struct {
 	command service.UserCommandHandler
 	query   service.UserQuery
 }
 
+// NewUser Create a new User HTTP Handler container
 func NewUser(cmd service.UserCommandHandler, q service.UserQuery) *User {
 	return &User{
 		command: cmd,
@@ -23,14 +38,18 @@ func NewUser(cmd service.UserCommandHandler, q service.UserQuery) *User {
 	}
 }
 
+/* HTTP Handler imp */
+
 func (User) GetName() string {
 	return "user"
 }
 
 func (u User) SetRoutes(r *mux.Router) {
-	r.Path("/user/{username}").Methods(http.MethodGet).Handler(observability.TraceHTTP(u.get, true))
-	r.Path("/user").Methods(http.MethodGet).Handler(observability.TraceHTTP(u.list, true))
+	r.Path("/user/{username}").Methods(http.MethodGet).HandlerFunc(u.get)
+	r.Path("/user").Methods(http.MethodGet).HandlerFunc(u.list)
 }
+
+/* Actual Handlers */
 
 func (u User) get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -60,6 +79,7 @@ func (u User) list(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		httputil.RespondErrorJSON(err, w)
+		return
 	}
 
 	_ = json.NewEncoder(w).Encode(struct {

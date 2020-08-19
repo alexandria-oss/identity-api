@@ -12,24 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package observability
+package resiliency
 
 import (
-	"go.opencensus.io/plugin/ochttp"
-	"go.opencensus.io/trace"
+	"go.uber.org/ratelimit"
 	"net/http"
 )
 
-func TraceHTTP() func(h http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return &ochttp.Handler{
-			Propagation:      nil,
-			Handler:          h,
-			StartOptions:     trace.StartOptions{},
-			GetStartOptions:  nil,
-			IsPublicEndpoint: true,
-			FormatSpanName:   nil,
-			IsHealthEndpoint: nil,
-		}
-	}
+var rl = ratelimit.New(64)
+
+func RateLimit(h http.Handler) http.Handler {
+	rl.Take()
+	return h
 }

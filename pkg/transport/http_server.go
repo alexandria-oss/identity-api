@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/pkg/transport/observability"
+	"github.com/alexandria-oss/identity-api/pkg/transport/resiliency"
 	muxhandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -111,6 +112,8 @@ func (s HTTPServer) setMiddlewares() {
 		muxhandlers.AllowedOrigins([]string{"*"}),
 	))
 	s.router.Use(muxhandlers.CompressHandler)
+	s.router.Use(observability.TraceHTTP())
+	s.router.Use(resiliency.RateLimit)
 }
 
 func (s HTTPServer) injectMetrics() error {
