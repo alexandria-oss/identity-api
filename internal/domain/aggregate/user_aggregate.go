@@ -7,7 +7,7 @@ import (
 )
 
 type UserRoot struct {
-	Root         *entity.User `json:"root"`
+	Root         *entity.User `json:"user"`
 	domainEvents []event.Domain
 }
 
