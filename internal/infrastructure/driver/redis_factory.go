@@ -40,11 +40,13 @@ func NewRedisClientPool(ctx context.Context, k domain.KernelStore, logger *log.L
 
 			if errPing := redisPool.Ping(ctx).Err(); errPing != nil {
 				logger.WithFields(log.Fields{
+					"caller":  "kernel.data.redis.factory",
 					"address": k.Config.Cache.Address,
 				}).Error("failed to connect to redis database")
 			}
 
 			logger.WithFields(log.Fields{
+				"caller":  "kernel.data.redis.factory",
 				"address": k.Config.Cache.Address,
 			}).Info("connected to redis database")
 		})
@@ -54,7 +56,10 @@ func NewRedisClientPool(ctx context.Context, k domain.KernelStore, logger *log.L
 		if redisPool != nil {
 			err := redisPool.Close()
 			if err != nil {
-				logger.WithField("detail", err.Error()).Error("failed to close redis client connection")
+				logger.WithFields(log.Fields{
+					"caller": "kernel.data.redis.factory",
+					"detail": err.Error(),
+				}).Error("failed to close redis client connection")
 			}
 		}
 	}
