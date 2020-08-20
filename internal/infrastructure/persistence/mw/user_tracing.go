@@ -2,6 +2,7 @@ package mw
 
 import (
 	"context"
+	"github.com/alexandria-oss/common-go/exception"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/domain/aggregate"
 	"github.com/alexandria-oss/identity-api/internal/domain/repository"
@@ -21,7 +22,7 @@ func (u UserRepositoryTracing) Remove(ctx context.Context, id string) (err error
 		if err != nil {
 			status = trace.Status{
 				Code:    tracingutil.CodeFromError(err),
-				Message: err.Error(),
+				Message: exception.GetDescription(err),
 			}
 		} else {
 			status = trace.Status{
@@ -46,7 +47,7 @@ func (u UserRepositoryTracing) Restore(ctx context.Context, id string) (err erro
 		if err != nil {
 			status = trace.Status{
 				Code:    tracingutil.CodeFromError(err),
-				Message: err.Error(),
+				Message: exception.GetDescription(err),
 			}
 		} else {
 			status = trace.Status{
@@ -71,7 +72,7 @@ func (u UserRepositoryTracing) HardRemove(ctx context.Context, id string) (err e
 		if err != nil {
 			status = trace.Status{
 				Code:    tracingutil.CodeFromError(err),
-				Message: err.Error(),
+				Message: exception.GetDescription(err),
 			}
 		} else {
 			status = trace.Status{
@@ -96,7 +97,7 @@ func (u UserRepositoryTracing) FetchOne(ctx context.Context, byUsername bool, ke
 		if err != nil {
 			status = trace.Status{
 				Code:    tracingutil.CodeFromError(err),
-				Message: err.Error(),
+				Message: exception.GetDescription(err),
 			}
 		} else {
 			status = trace.Status{
@@ -121,7 +122,7 @@ func (u UserRepositoryTracing) Fetch(ctx context.Context, criteria domain.Criter
 		if err != nil {
 			status = trace.Status{
 				Code:    tracingutil.CodeFromError(err),
-				Message: err.Error(),
+				Message: exception.GetDescription(err),
 			}
 		} else {
 			status = trace.Status{
