@@ -48,6 +48,9 @@ func (User) GetName() string {
 func (u User) SetRoutes(r *mux.Router) {
 	r.Path("/user/{key}").Methods(http.MethodGet).HandlerFunc(u.get)
 	r.Path("/user").Methods(http.MethodGet).HandlerFunc(u.list)
+
+	r.Path("/user/{username}/enable").Methods(http.MethodPatch).HandlerFunc(u.enable)
+	r.Path("/user/{username}/disable").Methods(http.MethodPatch).HandlerFunc(u.disable)
 }
 
 /* Actual Handlers */
@@ -56,10 +59,11 @@ func (u User) get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	var user *aggregate.UserRoot
 	var err error
-	if r.URL.Query().Get("by_username") == "true" {
-		user, err = u.query.Get(r.Context(), mux.Vars(r)["key"])
-	} else {
+	// Username fetch by default
+	if r.URL.Query().Get("by_id") == "true" {
 		user, err = u.query.GetByID(r.Context(), mux.Vars(r)["key"])
+	} else {
+		user, err = u.query.Get(r.Context(), mux.Vars(r)["key"])
 	}
 
 	if err != nil {
@@ -100,10 +104,22 @@ func (u User) list(w http.ResponseWriter, r *http.Request) {
 
 func (u User) enable(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	err := u.command.Enable(command.Enable{Ctx: r.Context(), ID: mux.Vars(r)["id"]})
-	if err != nil {
+	if err := u.command.Enable(command.Enable{Ctx: r.Context(), ID: mux.Vars(r)["username"]}); err != nil {
 		httputil.RespondErrorJSON(err, w)
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode(struct{}{})
+}
+
+func (u User) disable(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := u.command.Disable(command.Disable{
+		Ctx: r.Context(),
+		ID:  mux.Vars(r)["username"],
+	}); err != nil {
+		httputil.RespondErrorJSON(err, w)
+		return
 	}
 
 	_ = json.NewEncoder(w).Encode(struct{}{})
