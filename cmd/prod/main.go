@@ -15,13 +15,21 @@
 package main
 
 import (
-	"context"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/dependency"
+	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/pkg/dep"
+	"github.com/oklog/run"
+	"github.com/sethvargo/go-signalcontext"
+	log "github.com/sirupsen/logrus"
+	"net"
+	"net/http"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := signalcontext.OnInterrupt()
+	defer cancel()
+	logger := logging.NewLogger()
+
 	dep.SetContext(ctx)
 	dependency.SetContext(ctx)
 	server, cleanup, err := dep.InjectHTTP()
@@ -30,5 +38,41 @@ func main() {
 	}
 	defer cleanup()
 
-	panic(server.GetServer().ListenAndServe())
+	var g run.Group
+	{
+		l, err := net.Listen("tcp", server.GetServer().Addr)
+		if err != nil {
+			panic(err)
+		}
+
+		g.Add(func() error {
+			return http.Serve(l, server.GetServer().Handler)
+		}, func(err error) {
+			if err != nil {
+				logger.WithFields(log.Fields{
+					"caller": "main.http",
+					"detail": err.Error(),
+				}).Error("http tcp server failed to start")
+			}
+
+			_ = l.Close()
+		})
+	}
+	{
+		g.Add(func() error {
+			select {
+			case <-ctx.Done():
+				return nil
+			}
+		}, func(_ error) {
+			return
+		})
+	}
+
+	if err := g.Run(); err != nil {
+		logger.WithFields(log.Fields{
+			"caller": "main",
+			"detail": err.Error(),
+		}).Error("goroutines failed to end gracefully")
+	}
 }
