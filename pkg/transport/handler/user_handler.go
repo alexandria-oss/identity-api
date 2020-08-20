@@ -51,6 +51,7 @@ func (u User) SetRoutes(r *mux.Router) {
 
 	r.Path("/user/{username}/enable").Methods(http.MethodPatch).HandlerFunc(u.enable)
 	r.Path("/user/{username}/disable").Methods(http.MethodPatch).HandlerFunc(u.disable)
+	r.Path("/user/{username}/remove").Methods(http.MethodDelete).HandlerFunc(u.remove)
 }
 
 /* Actual Handlers */
@@ -115,6 +116,20 @@ func (u User) enable(w http.ResponseWriter, r *http.Request) {
 func (u User) disable(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := u.command.Disable(command.Disable{
+		Ctx: r.Context(),
+		ID:  mux.Vars(r)["username"],
+	}); err != nil {
+		httputil.RespondErrorJSON(err, w)
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode(struct{}{})
+}
+
+func (u User) remove(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	if err := u.command.Remove(command.Remove{
 		Ctx: r.Context(),
 		ID:  mux.Vars(r)["username"],
 	}); err != nil {
