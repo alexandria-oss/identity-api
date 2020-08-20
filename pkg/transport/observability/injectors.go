@@ -77,6 +77,7 @@ func InjectJaegerHTTP(k domain.KernelStore) (*jaeger.Exporter, error) {
 
 	trace.RegisterExporter(je)
 	trace.ApplyConfig(trace.Config{
+		// Use probabilistic 1000.0 in prod
 		DefaultSampler:             trace.AlwaysSample(),
 		IDGenerator:                nil,
 		MaxAnnotationEventsPerSpan: 0,

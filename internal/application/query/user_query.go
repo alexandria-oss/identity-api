@@ -22,6 +22,11 @@ func (q *UserQueryImp) Get(ctx context.Context, username string) (*aggregate.Use
 	return q.repository.FetchOne(ctxI, true, username)
 }
 
+func (q *UserQueryImp) GetByID(ctx context.Context, id string) (*aggregate.UserRoot, error) {
+	ctxI, _ := context.WithCancel(ctx)
+	return q.repository.FetchOne(ctxI, false, id)
+}
+
 func (q *UserQueryImp) List(ctx context.Context, criteria *domain.Criteria) (users []*aggregate.UserRoot,
 	nextToken domain.PaginationToken, err error) {
 	// Request next token

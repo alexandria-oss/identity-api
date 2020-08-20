@@ -22,5 +22,6 @@ import (
 
 type UserQuery interface {
 	Get(ctx context.Context, username string) (*aggregate.UserRoot, error)
+	GetByID(ctx context.Context, id string) (*aggregate.UserRoot, error)
 	List(ctx context.Context, criteria *domain.Criteria) ([]*aggregate.UserRoot, domain.PaginationToken, error)
 }

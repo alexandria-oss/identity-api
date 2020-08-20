@@ -17,6 +17,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/alexandria-oss/common-go/httputil"
+	"github.com/alexandria-oss/identity-api/internal/application/command"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/domain/aggregate"
 	"github.com/alexandria-oss/identity-api/pkg/service"
@@ -45,7 +46,7 @@ func (User) GetName() string {
 }
 
 func (u User) SetRoutes(r *mux.Router) {
-	r.Path("/user/{username}").Methods(http.MethodGet).HandlerFunc(u.get)
+	r.Path("/user/{key}").Methods(http.MethodGet).HandlerFunc(u.get)
 	r.Path("/user").Methods(http.MethodGet).HandlerFunc(u.list)
 }
 
@@ -53,12 +54,18 @@ func (u User) SetRoutes(r *mux.Router) {
 
 func (u User) get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	user, err := u.query.Get(r.Context(), mux.Vars(r)["username"])
+	var user *aggregate.UserRoot
+	var err error
+	if r.URL.Query().Get("by_username") == "true" {
+		user, err = u.query.Get(r.Context(), mux.Vars(r)["key"])
+	} else {
+		user, err = u.query.GetByID(r.Context(), mux.Vars(r)["key"])
+	}
+
 	if err != nil {
 		httputil.RespondErrorJSON(err, w)
 		return
 	}
-
 	_ = json.NewEncoder(w).Encode(user)
 }
 
@@ -89,4 +96,15 @@ func (u User) list(w http.ResponseWriter, r *http.Request) {
 		Users:     users,
 		NextToken: string(nextToken),
 	})
+}
+
+func (u User) enable(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	err := u.command.Enable(command.Enable{Ctx: r.Context(), ID: mux.Vars(r)["id"]})
+	if err != nil {
+		httputil.RespondErrorJSON(err, w)
+	}
+
+	_ = json.NewEncoder(w).Encode(struct{}{})
 }
