@@ -5,8 +5,10 @@ go 1.15
 require (
 	contrib.go.opencensus.io/exporter/jaeger v0.2.1
 	contrib.go.opencensus.io/exporter/prometheus v0.2.0
+	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5
 	github.com/alexandria-oss/common-go v0.1.0-alpha
 	github.com/aws/aws-sdk-go v1.34.2
+	github.com/eapache/go-resiliency v1.2.0
 	github.com/go-redis/redis/v8 v8.0.0-beta.7
 	github.com/google/uuid v1.1.1
 	github.com/google/wire v0.4.0
