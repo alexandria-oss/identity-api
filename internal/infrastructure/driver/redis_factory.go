@@ -21,8 +21,7 @@ func NewRedisClientPool(ctx context.Context, k domain.KernelStore, logger *log.L
 			output := make(chan bool, 1)
 			// Circuit Breaker
 			// Note: CB Timeout policy must be in ms and should be equal to retry policy's total time
-			// Retry Policy (x) = (3)(10s)
-			// CB Timeout policy f(x) = (x)(1000)   // *result units in ms
+			// CB Timeout policy f(x) = x(t)(1000)   // where x = retry times - t = time in sec - *result units in ms
 			hystrix.DefaultTimeout = int(time.Millisecond * 30000)
 			errors := hystrix.GoC(ctx, "redis_pool", func(ctxCB context.Context) error {
 				// Retry Policy
