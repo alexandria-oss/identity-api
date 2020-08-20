@@ -9,6 +9,7 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/domain/entity"
 	"github.com/aws/aws-sdk-go/aws"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
+	"strings"
 	"sync"
 )
 
@@ -35,8 +36,8 @@ func (r *UserAWSRepository) Remove(ctx context.Context, id string) error {
 		Username:   aws.String(id),
 	})
 	if err != nil {
-		switch err.Error() {
-		case cognito.ErrCodeUserNotFoundException:
+		switch {
+		case strings.Contains(err.Error(), "NotFound"):
 			return exception.NewCustomError(exception.NotFound, "user")
 		default:
 			return err
@@ -55,8 +56,8 @@ func (r *UserAWSRepository) Restore(ctx context.Context, id string) error {
 		Username:   aws.String(id),
 	})
 	if err != nil {
-		switch err.Error() {
-		case cognito.ErrCodeUserNotFoundException:
+		switch {
+		case strings.Contains(err.Error(), "NotFound"):
 			return exception.NewCustomError(exception.NotFound, "user")
 		default:
 			return err
@@ -75,8 +76,8 @@ func (r *UserAWSRepository) HardRemove(ctx context.Context, id string) error {
 		Username:   aws.String(id),
 	})
 	if err != nil {
-		switch err.Error() {
-		case cognito.ErrCodeUserNotFoundException:
+		switch {
+		case strings.Contains(err.Error(), "NotFound"):
 			return exception.NewCustomError(exception.NotFound, "user")
 		default:
 			return err
@@ -178,6 +179,7 @@ forLoop:
 	return users, nil
 }
 
+// Adapter
 func (r UserAWSRepository) mapToUser(userCg *cognito.UserType) *aggregate.UserRoot {
 	user := &aggregate.UserRoot{
 		Root: &entity.User{
