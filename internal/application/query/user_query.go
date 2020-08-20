@@ -29,19 +29,7 @@ func (q *UserQueryImp) GetByID(ctx context.Context, id string) (*aggregate.UserR
 
 func (q *UserQueryImp) List(ctx context.Context, criteria *domain.Criteria) (users []*aggregate.UserRoot,
 	nextToken domain.PaginationToken, err error) {
-	// Request next token
-	criteria.Limit = criteria.Limit + 1
-
 	ctxI, _ := context.WithCancel(ctx)
-	users, err = q.repository.Fetch(ctxI, *criteria)
-	if err != nil {
-		return
-	}
-
-	if criteria.Limit.GetPrimitive() <= len(users) {
-		nextToken = domain.PaginationToken(users[len(users)-1].Root.Sub)
-		users = users[:len(users)-1]
-	}
-
+	users, nextToken, err = q.repository.Fetch(ctxI, *criteria)
 	return
 }

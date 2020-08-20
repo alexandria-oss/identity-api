@@ -50,12 +50,13 @@ func (u UserRepositoryTracing) FetchOne(ctx context.Context, byUsername bool, ke
 	return
 }
 
-func (u UserRepositoryTracing) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot, err error) {
+func (u UserRepositoryTracing) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot,
+	nextToken domain.PaginationToken, err error) {
 	ctxT, span := trace.StartSpan(ctx, "identity/repository.fetch")
 	span.AddAttributes(trace.StringAttribute("operation", "fetch"))
 	defer u.injectTracing(span, "fetched users", err)
 
-	users, err = u.Next.Fetch(ctxT, criteria)
+	users, nextToken, err = u.Next.Fetch(ctxT, criteria)
 	return
 }
 

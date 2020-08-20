@@ -71,26 +71,37 @@ func (u UserRepositoryCache) FetchOne(ctx context.Context, byUsername bool, key 
 	return
 }
 
-func (u UserRepositoryCache) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot, err error) {
+func (u UserRepositoryCache) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot,
+	nextToken domain.PaginationToken, err error) {
+	body := struct {
+		Users     []*aggregate.UserRoot  `json:"users"`
+		NextToken domain.PaginationToken `json:"next_token"`
+	}{
+		Users:     make([]*aggregate.UserRoot, 0),
+		NextToken: "",
+	}
 	// Hash params and queries into single string -> KEY = service:hashed_query - VAL []UserRoot (cache query strategy)
 	encodedCriteria := u.hashCriteria(criteria)
 	if res, errR := u.Cache.Read(ctx, userTable, encodedCriteria); errR == nil && res != "" {
-		users = make([]*aggregate.UserRoot, 0)
-		if errJSON := json.Unmarshal([]byte(res), &users); errJSON == nil {
+		if errJSON := json.Unmarshal([]byte(res), &body); errJSON == nil {
+			users = body.Users
+			nextToken = body.NextToken
 			return
 		}
 	}
-
 	defer func() {
 		// Write-through
 		if err == nil && len(users) > 0 {
-			if usersJSON, errJSON := json.Marshal(users); errJSON == nil {
+			body.Users = users
+			body.NextToken = nextToken
+			if usersJSON, errJSON := json.Marshal(body); errJSON == nil {
 				_ = u.Cache.Write(ctx, userTable, encodedCriteria, usersJSON, time.Minute*10)
 			}
 		}
 	}()
+
 	// If not available, execute query in real db
-	users, err = u.Next.Fetch(ctx, criteria)
+	users, nextToken, err = u.Next.Fetch(ctx, criteria)
 	return
 }
 

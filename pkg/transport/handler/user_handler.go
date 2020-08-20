@@ -71,7 +71,7 @@ func (u User) get(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondErrorJSON(err, w)
 		return
 	}
-	_ = json.NewEncoder(w).Encode(user)
+	_ = json.NewEncoder(w).Encode(user.ToPrimitive())
 }
 
 func (u User) list(w http.ResponseWriter, r *http.Request) {
@@ -95,10 +95,10 @@ func (u User) list(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = json.NewEncoder(w).Encode(struct {
-		Users     []*aggregate.UserRoot `json:"users"`
-		NextToken string                `json:"next_token"`
+		Users     []*aggregate.UserRootPrimitive `json:"users"`
+		NextToken string                         `json:"next_token"`
 	}{
-		Users:     users,
+		Users:     aggregate.BulkUserToPrimitive(users),
 		NextToken: string(nextToken),
 	})
 }

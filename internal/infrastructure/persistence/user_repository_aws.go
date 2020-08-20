@@ -110,10 +110,10 @@ func (r *UserAWSRepository) FetchOne(ctx context.Context, byUsername bool, key s
 		return nil, exception.NewCustomError(exception.NotFound, "user")
 	}
 
-	return r.mapToUser(o.Users[0]), nil
+	return r.mapToUser(o.Users[0])
 }
 
-func (r *UserAWSRepository) Fetch(ctx context.Context, criteria domain.Criteria) ([]*aggregate.UserRoot, error) {
+func (r *UserAWSRepository) Fetch(ctx context.Context, criteria domain.Criteria) ([]*aggregate.UserRoot, domain.PaginationToken, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -150,79 +150,81 @@ forLoop:
 	o, err := r.client.ListUsersWithContext(ctx, &cognito.ListUsersInput{
 		AttributesToGet: nil,
 		Filter:          statement,
-		Limit:           aws.Int64(int64(criteria.Limit - 1)),
+		Limit:           aws.Int64(int64(criteria.Limit)),
 		PaginationToken: tokenStr,
 		UserPoolId:      aws.String(r.kernel.Config.Cognito.UserPoolID),
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	} else if len(o.Users) == 0 {
-		return nil, exception.NewCustomError(exception.NotFound, "users")
+		return nil, "", exception.NewCustomError(exception.NotFound, "users")
 	}
 
 	users := make([]*aggregate.UserRoot, 0)
 	for _, userCg := range o.Users {
-		user := r.mapToUser(userCg)
+		user, err := r.mapToUser(userCg)
+		if err != nil {
+			return nil, "", err
+		}
 		users = append(users, user)
 	}
 
-	// Add required next pagination token user
-	if o.PaginationToken != nil && o.PaginationToken != aws.String("") {
-		users = append(users, &aggregate.UserRoot{
-			Root: &entity.User{
-				Sub: *o.PaginationToken,
-			},
-		})
+	nextToken := domain.PaginationToken("")
+	if o.PaginationToken != nil {
+		nextToken = domain.PaginationToken(*o.PaginationToken)
 	}
 
-	return users, nil
+	return users, nextToken, nil
 }
 
 // Adapter
-func (r UserAWSRepository) mapToUser(userCg *cognito.UserType) *aggregate.UserRoot {
-	user := &aggregate.UserRoot{
-		Root: &entity.User{
-			Sub:        "",
-			Email:      "",
-			Username:   *userCg.Username,
-			Name:       "",
-			MiddleName: nil,
-			FamilyName: nil,
-			Locale:     "",
-			Picture:    nil,
-			Status:     *userCg.UserStatus,
-			CreateTime: userCg.UserCreateDate,
-			UpdateTime: userCg.UserLastModifiedDate,
-			Enabled:    *userCg.Enabled,
-		},
+func (r UserAWSRepository) mapToUser(userCg *cognito.UserType) (*aggregate.UserRoot, error) {
+	userPrim := &entity.UserPrimitive{
+		ID:         "",
+		Email:      "",
+		Username:   *userCg.Username,
+		Name:       "",
+		MiddleName: nil,
+		FamilyName: nil,
+		Locale:     "",
+		Picture:    nil,
+		Status:     *userCg.UserStatus,
+		CreateTime: userCg.UserCreateDate,
+		UpdateTime: userCg.UserLastModifiedDate,
+		Enabled:    *userCg.Enabled,
 	}
 
 	for _, attr := range userCg.Attributes {
 		switch *attr.Name {
 		case "sub":
-			user.Root.Sub = *attr.Value
+			userPrim.ID = *attr.Value
 			continue
 		case "email":
-			user.Root.Email = *attr.Value
+			userPrim.Email = *attr.Value
 			continue
 		case "name":
-			user.Root.Name = *attr.Value
+			userPrim.Name = *attr.Value
 			continue
 		case "middle_name":
-			user.Root.MiddleName = attr.Value
+			userPrim.MiddleName = attr.Value
 			continue
 		case "family_name":
-			user.Root.FamilyName = attr.Value
+			userPrim.FamilyName = attr.Value
 			continue
 		case "locale":
-			user.Root.Locale = *attr.Value
+			userPrim.Locale = *attr.Value
 			continue
 		case "picture":
-			user.Root.Picture = attr.Value
+			userPrim.Picture = attr.Value
 			continue
 		}
 	}
 
-	return user
+	user, err := userPrim.ToEntity()
+	if err != nil {
+		return nil, err
+	}
+
+	return &aggregate.UserRoot{User: user}, nil
 }

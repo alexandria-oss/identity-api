@@ -111,11 +111,12 @@ func (u UserRepositoryMetric) FetchOne(ctx context.Context, byUsername bool, key
 	return
 }
 
-func (u UserRepositoryMetric) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot, err error) {
+func (u UserRepositoryMetric) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot,
+	nextToken domain.PaginationToken, err error) {
 	begin := time.Now()
 	usageGauge.Inc()
 
-	users, err = u.Next.Fetch(ctx, criteria)
+	users, nextToken, err = u.Next.Fetch(ctx, criteria)
 	defer u.injectMetrics("fetch", begin, err)
 	return
 }

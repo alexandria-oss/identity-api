@@ -8,25 +8,29 @@ import (
 )
 
 type Domain struct {
-	AggregateID string    `json:"aggregate_id"`
-	ID          uuid.UUID `json:"id"`
-	Service     string    `json:"service"`
-	Action      string    `json:"action"`
-	Body        []byte    `json:"body"`
-	PublishTime time.Time `json:"publish_time"`
+	ID            uuid.UUID `json:"id"`
+	AggregateID   string    `json:"aggregate_id"`
+	Service       string    `json:"service"`
+	AggregateName string    `json:"aggregate_name"`
+	Action        string    `json:"action"`
+	Body          []byte    `json:"body"`
+	Snapshot      []byte    `json:"snapshot"`
+	PublishTime   time.Time `json:"publish_time"`
 }
 
-func NewDomain(aggregateID, service, action string, body []byte) *Domain {
-	return &Domain{
-		AggregateID: aggregateID,
-		ID:          uuid.New(),
-		Service:     strings.ToLower(service),
-		Action:      strings.ToLower(action),
-		Body:        body,
-		PublishTime: time.Now(),
+func NewDomain(aggregateID, service, aggregateName, action string, body, snapshot []byte) Domain {
+	return Domain{
+		ID:            uuid.New(),
+		AggregateID:   aggregateID,
+		Service:       strings.ToLower(service),
+		AggregateName: strings.ToLower(aggregateName),
+		Action:        strings.ToLower(action),
+		Body:          body,
+		Snapshot:      snapshot,
+		PublishTime:   time.Now(),
 	}
 }
 
 func (d Domain) GetName() string {
-	return fmt.Sprintf("%s.%s", d.Service, d.Action)
+	return fmt.Sprintf("%s.%s.%s", d.Service, d.AggregateName, d.Action)
 }
