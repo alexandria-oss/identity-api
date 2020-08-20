@@ -14,9 +14,10 @@ import (
 func WrapCacheRepository(c repository.Cache, l *log.Logger) repository.Cache {
 	var repo repository.Cache
 	repo = c
+	repo = NewCacheMetric(repo, l)
 	repo = CacheLog{
 		Logger: l,
-		Next:   c,
+		Next:   repo,
 	}
 
 	return repo

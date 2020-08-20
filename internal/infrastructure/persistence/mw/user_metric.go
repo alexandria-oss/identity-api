@@ -7,6 +7,7 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/domain/aggregate"
 	"github.com/alexandria-oss/identity-api/internal/domain/repository"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -24,7 +25,7 @@ var (
 	metricSingleton = new(sync.Once)
 )
 
-func init() {
+func NewUserRepositoryMetric(n repository.User, l *log.Logger) UserRepositoryMetric {
 	metricSingleton.Do(func() {
 		labels := []string{"caller", "error"}
 		usageGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -59,49 +60,63 @@ func init() {
 			AgeBuckets:  0,
 			BufCap:      0,
 		}, labels)
-		registerMetrics()
+		registerMetrics(l)
 	})
+
+	return UserRepositoryMetric{
+		Next: n,
+	}
 }
 
-func registerMetrics() {
-	failedMetricRegistry("user_repository_usage", prometheus.Register(usageGauge))
-	failedMetricRegistry("user_repository_error_count", prometheus.Register(errCounter))
-	failedMetricRegistry("user_repository_hit_count", prometheus.Register(hitCounter))
-	failedMetricRegistry("user_repository_hit_duration", prometheus.Register(hitDuration))
+func registerMetrics(l *log.Logger) {
+	failedMetricRegistry("user_repository_usage", prometheus.Register(usageGauge), l)
+	failedMetricRegistry("user_repository_error_count", prometheus.Register(errCounter), l)
+	failedMetricRegistry("user_repository_hit_count", prometheus.Register(hitCounter), l)
+	failedMetricRegistry("user_repository_hit_duration", prometheus.Register(hitDuration), l)
 }
 
 func (u UserRepositoryMetric) Remove(ctx context.Context, id string) (err error) {
+	begin := time.Now()
 	usageGauge.Inc()
-	defer u.injectMetrics("remove", time.Now(), err)
+
 	err = u.Next.Remove(ctx, id)
+	defer u.injectMetrics("remove", begin, err)
 	return
 }
 
 func (u UserRepositoryMetric) Restore(ctx context.Context, id string) (err error) {
+	begin := time.Now()
 	usageGauge.Inc()
-	defer u.injectMetrics("restore", time.Now(), err)
+
 	err = u.Next.Restore(ctx, id)
+	defer u.injectMetrics("restore", begin, err)
 	return
 }
 
 func (u UserRepositoryMetric) HardRemove(ctx context.Context, id string) (err error) {
+	begin := time.Now()
 	usageGauge.Inc()
-	defer u.injectMetrics("hardRemove", time.Now(), err)
+
 	err = u.Next.Remove(ctx, id)
+	defer u.injectMetrics("hardRemove", begin, err)
 	return
 }
 
 func (u UserRepositoryMetric) FetchOne(ctx context.Context, byUsername bool, key string) (user *aggregate.UserRoot, err error) {
+	begin := time.Now()
 	usageGauge.Inc()
-	defer u.injectMetrics("fetchOne", time.Now(), err)
+
 	user, err = u.Next.FetchOne(ctx, byUsername, key)
+	defer u.injectMetrics("fetchOne", begin, err)
 	return
 }
 
 func (u UserRepositoryMetric) Fetch(ctx context.Context, criteria domain.Criteria) (users []*aggregate.UserRoot, err error) {
+	begin := time.Now()
 	usageGauge.Inc()
-	defer u.injectMetrics("fetch", time.Now(), err)
+
 	users, err = u.Next.Fetch(ctx, criteria)
+	defer u.injectMetrics("fetch", begin, err)
 	return
 }
 
