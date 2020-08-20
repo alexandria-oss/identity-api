@@ -23,9 +23,11 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 	"strings"
+	"time"
 )
 
 func InjectPrometheusHTTP(k domain.KernelStore) (*ocprom.Exporter, error) {
+	view.SetReportingPeriod(time.Second * 60)
 	err := view.Register(
 		ochttp.ServerLatencyView,
 		ochttp.ServerRequestBytesView,
@@ -74,5 +76,13 @@ func InjectJaegerHTTP(k domain.KernelStore) (*jaeger.Exporter, error) {
 	}
 
 	trace.RegisterExporter(je)
+	trace.ApplyConfig(trace.Config{
+		DefaultSampler:             trace.AlwaysSample(),
+		IDGenerator:                nil,
+		MaxAnnotationEventsPerSpan: 0,
+		MaxMessageEventsPerSpan:    0,
+		MaxAttributesPerSpan:       0,
+		MaxLinksPerSpan:            0,
+	})
 	return je, nil
 }
