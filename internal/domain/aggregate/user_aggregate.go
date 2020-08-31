@@ -16,7 +16,7 @@ type UserRootPrimitive struct {
 	User *entity.UserPrimitive `json:"user"`
 }
 
-func CreateUserRoot(username value.Username, email value.Email) *UserRoot {
+func NewUserRoot(username value.Username, email value.Email) *UserRoot {
 	// Gen default value objects
 	userID := &value.UserID{Value: ""}
 
@@ -52,18 +52,22 @@ func CreateUserRoot(username value.Username, email value.Email) *UserRoot {
 	return user
 }
 
+// PullDomainEvents Get all the aggregate root's immutable events
 func (r UserRoot) PullDomainEvents() []event.Domain {
 	return r.events
 }
 
+// Record Register a new event
 func (r *UserRoot) Record(e event.Domain) {
 	r.events = append(r.events, e)
 }
 
+// ToPrimitive Get an aggregate root primitive-only version
 func (r UserRoot) ToPrimitive() *UserRootPrimitive {
 	return &UserRootPrimitive{User: r.User.ToPrimitive()}
 }
 
+// UnmarshalBinary Parse binary data to struct
 func (r *UserRoot) UnmarshalBinary(data []byte) error {
 	prim := new(UserRootPrimitive)
 	if err := json.Unmarshal(data, prim); err != nil {
@@ -79,15 +83,7 @@ func (r *UserRoot) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// MarshalBinary Parse current in-memory data to binary
 func (r UserRoot) MarshalBinary() ([]byte, error) {
 	return json.Marshal(r.ToPrimitive())
-}
-
-func BulkUserToPrimitive(uRoot []*UserRoot) []*UserRootPrimitive {
-	users := make([]*UserRootPrimitive, 0)
-	for _, u := range uRoot {
-		users = append(users, u.ToPrimitive())
-	}
-
-	return users
 }
