@@ -1,6 +1,9 @@
 package value
 
-import "strconv"
+import (
+	"github.com/alexandria-oss/common-go/exception"
+	"strconv"
+)
 
 type State struct {
 	Value bool
@@ -9,7 +12,7 @@ type State struct {
 func NewStateFromString(state string) (*State, error) {
 	s, err := strconv.ParseBool(state)
 	if err != nil {
-		return nil, err
+		return nil, exception.NewFieldFormat("state", "boolean")
 	}
 
 	return &State{Value: s}, nil

@@ -18,16 +18,24 @@ func NewEmailFromString(email string) (*Email, error) {
 	return value, nil
 }
 
-func (e *Email) Change(email string) {
+func (e *Email) Change(email string) error {
+	snapshot := e.Value
 	e.Value = email
+
+	if err := e.IsValid(); err != nil {
+		e.Value = snapshot
+		return err
+	}
+
+	return nil
 }
 
 func (e Email) IsValid() error {
 	switch {
 	case len(e.Value) == 0 && len(e.Value) > 512:
-		return exception.NewCustomError(exception.FieldRange, "email", "1", "512")
+		return exception.NewFieldRange("email", "1", "512")
 	case !strings.Contains(e.Value, "@"):
-		return exception.NewCustomError(exception.FieldFormat, "email", "valid email")
+		return exception.NewFieldFormat("email", "valid email")
 	default:
 		return nil
 	}
