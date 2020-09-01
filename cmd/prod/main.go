@@ -32,7 +32,7 @@ func main() {
 
 	dep.SetContext(ctx)
 	dependency.SetContext(ctx)
-	server, cleanup, err := dep.InjectHTTP()
+	transport, cleanup, err := dep.InjectTransport()
 	if err != nil {
 		panic(err)
 	}
@@ -40,19 +40,38 @@ func main() {
 
 	var g run.Group
 	{
-		l, err := net.Listen("tcp", server.GetServer().Addr)
+		l, err := net.Listen("tcp", transport.HTTP.GetServer().Addr)
 		if err != nil {
 			panic(err)
 		}
 
 		g.Add(func() error {
-			return http.Serve(l, server.GetServer().Handler)
+			return http.Serve(l, transport.HTTP.GetServer().Handler)
 		}, func(err error) {
 			if err != nil {
 				logger.WithFields(log.Fields{
 					"caller": "main.http",
 					"detail": err.Error(),
 				}).Error("http tcp server failed to start")
+			}
+
+			_ = l.Close()
+		})
+	}
+	{
+		l, err := net.Listen("tcp", transport.GetKernel().Config.Transport.GRPC.Address)
+		if err != nil {
+			panic(err)
+		}
+
+		g.Add(func() error {
+			return transport.GRPC.GetServer().Serve(l)
+		}, func(err error) {
+			if err != nil {
+				logger.WithFields(log.Fields{
+					"caller": "main.grpc",
+					"detail": err.Error(),
+				}).Error("grpc tcp server failed to start")
 			}
 
 			_ = l.Close()
