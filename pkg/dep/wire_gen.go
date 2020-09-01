@@ -15,6 +15,7 @@ import (
 	"github.com/alexandria-oss/identity-api/pkg/service"
 	"github.com/alexandria-oss/identity-api/pkg/service/wrapper"
 	"github.com/alexandria-oss/identity-api/pkg/transport"
+	"github.com/alexandria-oss/identity-api/pkg/transport/action"
 	"github.com/alexandria-oss/identity-api/pkg/transport/handler"
 	"github.com/google/wire"
 	"github.com/sirupsen/logrus"
@@ -22,7 +23,8 @@ import (
 
 // Injectors from wire.go:
 
-func InjectHTTP() (*transport.HTTPServer, func(), error) {
+func InjectTransport() (*transport.TransportFacade, func(), error) {
+	context := provideContext()
 	kernelStore := domain.NewKernelStore()
 	logger := logging.NewLogger()
 	userHandlerImp, cleanup := dependency.InjectUserCommandHandler()
@@ -31,13 +33,16 @@ func InjectHTTP() (*transport.HTTPServer, func(), error) {
 	userQuery := provideUserQuery(userQueryImp, logger)
 	user := handler.NewUser(userCommandHandler, userQuery)
 	v := provideHandlers(user)
-	httpServer, err := transport.NewHTTPServer(kernelStore, logger, v...)
+	actionUser := action.NewUser(userCommandHandler, userQuery)
+	v2 := provideGRPCServices(actionUser)
+	transportFacade, cleanup3, err := transport.NewTransportFacade(context, kernelStore, logger, v, v2)
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	return httpServer, func() {
+	return transportFacade, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil
@@ -45,7 +50,9 @@ func InjectHTTP() (*transport.HTTPServer, func(), error) {
 
 // wire.go:
 
-var httpSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, dependency.InjectUserCommandHandler, provideUserCommandHandler, dependency.InjectUserQuery, provideUserQuery, handler.NewUser, provideHandlers, transport.NewHTTPServer)
+var transportSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, dependency.InjectUserCommandHandler, provideUserCommandHandler, dependency.InjectUserQuery, provideUserQuery, handler.NewUser, provideHandlers, action.NewUser, provideGRPCServices,
+	provideContext, transport.NewTransportFacade,
+)
 
 var ctx = context.Background()
 
@@ -67,4 +74,8 @@ func provideUserQuery(svc *query.UserQueryImp, logger *logrus.Logger) service.Us
 
 func provideHandlers(user *handler.User) []transport.Handler {
 	return []transport.Handler{user}
+}
+
+func provideGRPCServices(user *action.User) []transport.GRPCService {
+	return []transport.GRPCService{user}
 }

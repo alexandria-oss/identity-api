@@ -12,12 +12,13 @@ import (
 	"github.com/alexandria-oss/identity-api/pkg/service"
 	"github.com/alexandria-oss/identity-api/pkg/service/wrapper"
 	"github.com/alexandria-oss/identity-api/pkg/transport"
+	"github.com/alexandria-oss/identity-api/pkg/transport/action"
 	"github.com/alexandria-oss/identity-api/pkg/transport/handler"
 	"github.com/google/wire"
 	log "github.com/sirupsen/logrus"
 )
 
-var httpSet = wire.NewSet(
+var transportSet = wire.NewSet(
 	domain.NewKernelStore,
 	logging.NewLogger,
 	dependency.InjectUserCommandHandler,
@@ -26,7 +27,10 @@ var httpSet = wire.NewSet(
 	provideUserQuery,
 	handler.NewUser,
 	provideHandlers,
-	transport.NewHTTPServer,
+	action.NewUser,
+	provideGRPCServices,
+	provideContext,
+	transport.NewTransportFacade,
 )
 
 var ctx = context.Background()
@@ -51,8 +55,12 @@ func provideHandlers(user *handler.User) []transport.Handler {
 	return []transport.Handler{user}
 }
 
-func InjectHTTP() (*transport.HTTPServer, func(), error) {
-	wire.Build(httpSet)
+func provideGRPCServices(user *action.User) []transport.GRPCService {
+	return []transport.GRPCService{user}
+}
 
-	return &transport.HTTPServer{}, nil, nil
+func InjectTransport() (*transport.TransportFacade, func(), error) {
+	wire.Build(transportSet)
+
+	return &transport.TransportFacade{}, nil, nil
 }
