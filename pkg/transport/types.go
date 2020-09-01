@@ -14,10 +14,19 @@
 
 package transport
 
-import "github.com/gorilla/mux"
+import (
+	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
+)
 
 // Handler HTTP handler container/mediator
 type Handler interface {
 	SetRoutes(r *mux.Router)
+	GetName() string
+}
+
+// GRPCService gRPC service mediator
+type GRPCService interface {
+	SetRoutes(s *grpc.Server)
 	GetName() string
 }
