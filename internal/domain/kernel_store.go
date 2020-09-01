@@ -36,6 +36,9 @@ type KernelStore struct {
 			HTTP struct {
 				Address string
 			}
+			GRPC struct {
+				Address string
+			}
 		}
 		Tracing struct {
 			Collector string
@@ -62,6 +65,7 @@ func init() {
 	viper.SetDefault("alexandria.tracing.jaeger.username", "")
 	viper.SetDefault("alexandria.tracing.jaeger.password", "")
 	viper.SetDefault("alexandria.transport.http.address", "localhost:8080")
+	viper.SetDefault("alexandria.transport.grpc.address", "localhost:9090")
 }
 
 func NewKernelStore() KernelStore {
@@ -98,6 +102,7 @@ func NewKernelStore() KernelStore {
 	kernel.Config.Tracing.Username = viper.GetString("alexandria.tracing.jaeger.username")
 	kernel.Config.Tracing.Password = viper.GetString("alexandria.tracing.jaeger.password")
 	kernel.Config.Transport.HTTP.Address = viper.GetString("alexandria.transport.http.address")
+	kernel.Config.Transport.GRPC.Address = viper.GetString("alexandria.transport.grpc.address")
 
 	return kernel
 }
