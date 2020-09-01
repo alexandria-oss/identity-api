@@ -45,7 +45,7 @@ COPY --from=builder /go/src/github.com/alexandria-oss/alexandria/identity-api/co
 
 # Expose port 8080 -> HTTP & 31337 -> gRPC to the outside world
 EXPOSE 8080
-EXPOSE 31337
+EXPOSE 9090
 
 # Command to run the executable
 CMD ["./identity"]
