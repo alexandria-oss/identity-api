@@ -55,7 +55,7 @@ func (u User) SetRoutes(r *mux.Router) {
 	r.Path("/user/{username}/remove").Methods(http.MethodDelete).HandlerFunc(u.remove)
 }
 
-/* Actual Handlers */
+/* Actual Handler(s) */
 
 func (u User) get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
