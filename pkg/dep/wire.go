@@ -10,18 +10,20 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/dependency"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/pkg/service"
+	"github.com/alexandria-oss/identity-api/pkg/service/wrapper"
 	"github.com/alexandria-oss/identity-api/pkg/transport"
 	"github.com/alexandria-oss/identity-api/pkg/transport/handler"
 	"github.com/google/wire"
+	log "github.com/sirupsen/logrus"
 )
 
 var httpSet = wire.NewSet(
 	domain.NewKernelStore,
 	logging.NewLogger,
-	wire.Bind(new(service.UserCommandHandler), new(*cmdhandler.UserHandlerImp)),
 	dependency.InjectUserCommandHandler,
-	wire.Bind(new(service.UserQuery), new(*query.UserQueryImp)),
+	provideUserCommandHandler,
 	dependency.InjectUserQuery,
+	provideUserQuery,
 	handler.NewUser,
 	provideHandlers,
 	transport.NewHTTPServer,
@@ -35,6 +37,14 @@ func SetContext(parentCtx context.Context) {
 
 func provideContext() context.Context {
 	return ctx
+}
+
+func provideUserCommandHandler(svc *cmdhandler.UserHandlerImp, logger *log.Logger) service.UserCommandHandler {
+	return wrapper.NewUserCommandHandler(svc, logger)
+}
+
+func provideUserQuery(svc *query.UserQueryImp, logger *log.Logger) service.UserQuery {
+	return wrapper.NewUserQuery(svc, logger)
 }
 
 func provideHandlers(user *handler.User) []transport.Handler {

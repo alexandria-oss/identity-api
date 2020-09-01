@@ -13,9 +13,11 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/dependency"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/pkg/service"
+	"github.com/alexandria-oss/identity-api/pkg/service/wrapper"
 	"github.com/alexandria-oss/identity-api/pkg/transport"
 	"github.com/alexandria-oss/identity-api/pkg/transport/handler"
 	"github.com/google/wire"
+	"github.com/sirupsen/logrus"
 )
 
 // Injectors from wire.go:
@@ -24,8 +26,10 @@ func InjectHTTP() (*transport.HTTPServer, func(), error) {
 	kernelStore := domain.NewKernelStore()
 	logger := logging.NewLogger()
 	userHandlerImp, cleanup := dependency.InjectUserCommandHandler()
+	userCommandHandler := provideUserCommandHandler(userHandlerImp, logger)
 	userQueryImp, cleanup2 := dependency.InjectUserQuery()
-	user := handler.NewUser(userHandlerImp, userQueryImp)
+	userQuery := provideUserQuery(userQueryImp, logger)
+	user := handler.NewUser(userCommandHandler, userQuery)
 	v := provideHandlers(user)
 	httpServer, err := transport.NewHTTPServer(kernelStore, logger, v...)
 	if err != nil {
@@ -41,7 +45,7 @@ func InjectHTTP() (*transport.HTTPServer, func(), error) {
 
 // wire.go:
 
-var httpSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, wire.Bind(new(service.UserCommandHandler), new(*cmdhandler.UserHandlerImp)), dependency.InjectUserCommandHandler, wire.Bind(new(service.UserQuery), new(*query.UserQueryImp)), dependency.InjectUserQuery, handler.NewUser, provideHandlers, transport.NewHTTPServer)
+var httpSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, dependency.InjectUserCommandHandler, provideUserCommandHandler, dependency.InjectUserQuery, provideUserQuery, handler.NewUser, provideHandlers, transport.NewHTTPServer)
 
 var ctx = context.Background()
 
@@ -51,6 +55,14 @@ func SetContext(parentCtx context.Context) {
 
 func provideContext() context.Context {
 	return ctx
+}
+
+func provideUserCommandHandler(svc *cmdhandler.UserHandlerImp, logger *logrus.Logger) service.UserCommandHandler {
+	return wrapper.NewUserCommandHandler(svc, logger)
+}
+
+func provideUserQuery(svc *query.UserQueryImp, logger *logrus.Logger) service.UserQuery {
+	return wrapper.NewUserQuery(svc, logger)
 }
 
 func provideHandlers(user *handler.User) []transport.Handler {
