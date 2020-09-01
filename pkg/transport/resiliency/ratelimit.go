@@ -15,19 +15,36 @@
 package resiliency
 
 import (
+	"context"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net/http"
 )
 
-var httpLimiter = rate.NewLimiter(1, 3)
+var rpcLimiter = rate.NewLimiter(1, 4)
+var httpLimiter = rate.NewLimiter(1, 4)
 
+// HTTPRateLimit returns an http handler that performs request rate limiting
 func HTTPRateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if httpLimiter.Allow() == false {
+		if !httpLimiter.Allow() {
 			http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// GRPCRateLimit returns a new unary server interceptors that performs request rate limiting
+func GRPCRateLimit() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if !rpcLimiter.Allow() {
+			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by rate limit middleware, please retry later",
+				info.FullMethod)
+		}
+		return handler(ctx, req)
+	}
 }

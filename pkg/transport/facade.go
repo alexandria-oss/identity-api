@@ -13,3 +13,79 @@
 // limitations under the License.
 
 package transport
+
+import (
+	"context"
+	"errors"
+	"github.com/alexandria-oss/identity-api/internal/domain"
+	"github.com/alexandria-oss/identity-api/pkg/transport/observability"
+	log "github.com/sirupsen/logrus"
+)
+
+// TransportFacade Encapsulates transport-tier complexity
+type TransportFacade struct {
+	kernel domain.KernelStore
+	logger *log.Logger
+	HTTP   *HTTPServer
+	GRPC   *GRPCServer
+	// TODO: Add PubSub/AMQP
+}
+
+// NewTransportFacade create a new TransportFacade encapsulated sub-ecosystem
+func NewTransportFacade(ctx context.Context, kernel domain.KernelStore, logger *log.Logger, handlers []Handler,
+	rpcServices []GRPCService) (*TransportFacade, func(), error) {
+	// Avoid any operation(s) if nil reference was found
+	if ctx == nil || logger == nil || &kernel == nil {
+		return nil, nil, errors.New("missing required transport parameters")
+	}
+
+	f := &TransportFacade{
+		kernel: kernel,
+		logger: logger,
+		HTTP:   NewHTTPServer(kernel, logger, handlers...),
+		GRPC:   NewGRPCServer(ctx, logger, rpcServices...),
+	}
+
+	// Enable Observability
+	errTracing, cleanup := f.injectTracing()
+	if errTracing != nil {
+		return nil, nil, errTracing
+	}
+	if err := f.injectMetrics(); err != nil {
+		return nil, cleanup, err
+	}
+
+	return f, cleanup, nil
+}
+
+// GetKernel get transport current kernel
+func (f TransportFacade) GetKernel() domain.KernelStore {
+	return f.kernel
+}
+
+func (f TransportFacade) injectMetrics() error {
+	pe, err := observability.StartPrometheusMonitoring(f.kernel)
+	if err != nil {
+		f.logger.WithFields(log.Fields{
+			"caller": "transport.facade.metrics",
+			"detail": err.Error(),
+		}).Error("cannot start prometheus metrics exporter")
+		return err
+	}
+
+	f.HTTP.router.Path("/metrics").Handler(pe)
+	return nil
+}
+
+func (f TransportFacade) injectTracing() (error, func()) {
+	je, err := observability.StartJaegerTracing(f.kernel)
+	if err != nil {
+		f.logger.WithFields(log.Fields{
+			"caller": "transport.facade.tracing",
+			"detail": err.Error(),
+		}).Error("cannot start jaeger agent and collector exporter")
+		return err, nil
+	}
+
+	return nil, je.Flush
+}
