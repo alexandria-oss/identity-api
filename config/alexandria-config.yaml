@@ -23,3 +23,5 @@ alexandria:
   transport:
     http:
       address: localhost:8080
+    grpc:
+      address: localhost:9090

@@ -15,13 +15,19 @@
 package resiliency
 
 import (
-	"go.uber.org/ratelimit"
+	"golang.org/x/time/rate"
 	"net/http"
 )
 
-var rl = ratelimit.New(64)
+var httpLimiter = rate.NewLimiter(1, 3)
 
-func RateLimit(h http.Handler) http.Handler {
-	rl.Take()
-	return h
+func HTTPRateLimit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if httpLimiter.Allow() == false {
+			http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
