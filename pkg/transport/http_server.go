@@ -94,7 +94,7 @@ func (s *HTTPServer) MapRoutes() {
 }
 
 func (s HTTPServer) setMiddlewares() {
-	s.router.Use(muxhandlers.RecoveryHandler())
+	s.router.Use(muxhandlers.RecoveryHandler(muxhandlers.RecoveryLogger(s.logger)))
 	s.router.Use(muxhandlers.CORS(
 		muxhandlers.AllowedMethods([]string{
 			http.MethodGet,
