@@ -13,6 +13,7 @@ import (
 
 var redisPool *redis.Client
 var redisSingleton = new(sync.Once)
+var redisCloseCounter = 0
 
 func NewRedisClientPool(ctx context.Context, k domain.KernelStore, logger *log.Logger) (*redis.Client, func()) {
 	if redisPool == nil {
@@ -64,11 +65,16 @@ func NewRedisClientPool(ctx context.Context, k domain.KernelStore, logger *log.L
 
 	cleanup := func() {
 		if redisPool != nil {
-			if err := redisPool.Close(); err != nil {
-				logger.WithFields(log.Fields{
-					"caller": "kernel.data.redis.factory",
-					"detail": err.Error(),
-				}).Error("failed to close redis client connection")
+			if redisCloseCounter < 1 {
+				if err := redisPool.Close(); err != nil {
+					logger.WithFields(log.Fields{
+						"caller": "kernel.data.redis.factory",
+						"detail": err.Error(),
+					}).Error("failed to close redis client connection")
+				}
+
+				logger.WithField("caller", "kernel.data.redis.factory").Info("successfully closed redis pool connection")
+				redisCloseCounter++
 			}
 		}
 	}
