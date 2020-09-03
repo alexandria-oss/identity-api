@@ -43,7 +43,7 @@ COPY --from=builder /go/src/github.com/alexandria-oss/alexandria/identity-api/co
 CMD ["mkdir .aws"]
 COPY --from=builder /go/src/github.com/alexandria-oss/alexandria/identity-api/config/.aws ./.aws
 
-# Expose port 8080 -> HTTP & 31337 -> gRPC to the outside world
+# Expose port 8080 -> HTTP & 9090 -> gRPC to the outside world
 EXPOSE 8080
 EXPOSE 9090
 
