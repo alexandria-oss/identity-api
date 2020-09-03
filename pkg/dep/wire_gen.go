@@ -26,7 +26,7 @@ import (
 func InjectTransport() (*transport.TransportFacade, func(), error) {
 	context := provideContext()
 	kernelStore := domain.NewKernelStore()
-	logger := logging.NewLogger()
+	logger := logging.NewLogger(kernelStore)
 	userHandlerImp, cleanup := dependency.InjectUserCommandHandler()
 	userCommandHandler := provideUserCommandHandler(userHandlerImp, logger)
 	userQueryImp, cleanup2 := dependency.InjectUserQuery()

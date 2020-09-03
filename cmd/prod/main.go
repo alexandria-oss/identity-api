@@ -15,6 +15,7 @@
 package main
 
 import (
+	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/dependency"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/pkg/dep"
@@ -28,7 +29,9 @@ import (
 func main() {
 	ctx, cancel := signalcontext.OnInterrupt()
 	defer cancel()
-	logger := logging.NewLogger()
+	kernel := domain.NewKernelStore()
+	logger := logging.NewLogger(kernel)
+	logger.WithField("env", kernel.Environment).Info("starting alexandria identity api service")
 
 	dep.SetContext(ctx)
 	dependency.SetContext(ctx)
