@@ -1,7 +1,9 @@
 # Alexandria Identity API
+![Go](https://github.com/alexandria-oss/identity-api/workflows/Go/badge.svg)
+
 The Identity API is responsible of reading and some few writing operations related to users, special writing operations such as register, sign in and many more must be done using the AWS Cognito client API/SDK directly.
 
-It uses gRPC, GraphQL and HTTP communication protocols to expose its API.
+It uses gRPC and HTTP communication protocols to expose its API.
 
 The Identity API v1 is using Amazon Web Service's Cognito as user pool and identity federation manager.
 
