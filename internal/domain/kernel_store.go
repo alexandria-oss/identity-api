@@ -79,6 +79,7 @@ func NewKernelStore() KernelStore {
 	viper.SetConfigName("alexandria-config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./config/")
+	viper.AddConfigPath(".")
 
 	// Open config
 	if err := viper.ReadInConfig(); err != nil {
