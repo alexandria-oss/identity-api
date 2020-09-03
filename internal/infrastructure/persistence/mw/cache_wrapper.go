@@ -12,7 +12,7 @@ import (
 //
 // - Resiliency strategies (Circuit Breaking and Retry Policy)
 func WrapCacheRepository(c repository.Cache, l *log.Logger) repository.Cache {
-	// Chain order: Tracing -> Metric -> Logging -> Repository
+	// Chain order: Resiliency -> Tracing -> Metric -> Logging -> Repository
 	var repo repository.Cache
 	repo = c
 	repo = CacheLog{
@@ -22,6 +22,10 @@ func WrapCacheRepository(c repository.Cache, l *log.Logger) repository.Cache {
 	repo = NewCacheMetric(repo, l)
 	repo = CacheTracing{
 		Next: repo,
+	}
+	repo = CacheRetryPolicy{
+		Logger: l,
+		Next:   repo,
 	}
 
 	return repo

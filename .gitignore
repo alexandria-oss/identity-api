@@ -20,3 +20,6 @@
 # Dev environment logs
 log/
 logs/
+
+# Dev builds
+build/

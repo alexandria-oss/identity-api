@@ -70,7 +70,7 @@ func NewRedisClientPool(ctx context.Context, k domain.KernelStore, logger *log.L
 					logger.WithFields(log.Fields{
 						"caller": "kernel.data.redis.factory",
 						"detail": err.Error(),
-					}).Error("failed to close redis client connection")
+					}).Error("failed to close redis pool connection")
 				}
 
 				logger.WithField("caller", "kernel.data.redis.factory").Info("successfully closed redis pool connection")

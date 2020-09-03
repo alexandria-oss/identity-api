@@ -16,10 +16,12 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/pkg/transport/observability"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 )
 
 // TransportFacade Encapsulates transport-tier complexity
@@ -54,6 +56,7 @@ func NewTransportFacade(ctx context.Context, kernel domain.KernelStore, logger *
 	if err := f.injectMetrics(); err != nil {
 		return nil, cleanup, err
 	}
+	f.injectHealthCheck()
 
 	return f, cleanup, nil
 }
@@ -73,7 +76,7 @@ func (f TransportFacade) injectMetrics() error {
 		return err
 	}
 
-	f.HTTP.router.Path("/metrics").Handler(pe)
+	f.HTTP.GetRouter().Path("/metrics").Handler(pe)
 	return nil
 }
 
@@ -88,4 +91,15 @@ func (f TransportFacade) injectTracing() (error, func()) {
 	}
 
 	return nil, je.Flush
+}
+
+func (f TransportFacade) injectHealthCheck() {
+	f.HTTP.GetRouter().Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(struct {
+			Status string `json:"status"`
+		}{
+			Status: "UP",
+		})
+	})
 }
