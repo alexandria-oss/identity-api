@@ -73,6 +73,11 @@ func (s *HTTPServer) GetServer() *http.Server {
 	return s.server
 }
 
+// GetRouter Obtain HTTPServer's root mux.Router reference
+func (s *HTTPServer) GetRouter() *mux.Router {
+	return s.router
+}
+
 // AddHandlers Runtime HTTPServer handler injection using an strategy-like pattern
 func (s *HTTPServer) AddHandlers(hs ...Handler) {
 	for _, h := range hs {
