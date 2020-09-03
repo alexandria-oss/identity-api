@@ -1,6 +1,7 @@
 alexandria:
   service: identity
   version: "1"
+  environment: dev
   api-version: v1
   aws:
     cognito:
@@ -23,3 +24,5 @@ alexandria:
   transport:
     http:
       address: localhost:8080
+    grpc:
+      address: localhost:9090

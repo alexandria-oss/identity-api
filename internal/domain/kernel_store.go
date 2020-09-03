@@ -14,13 +14,17 @@
 
 package domain
 
-import "github.com/spf13/viper"
+import (
+	"github.com/spf13/viper"
+	"strings"
+)
 
 type KernelStore struct {
-	Service    string
-	Version    string
-	APIVersion string
-	Config     struct {
+	Service     string
+	Version     string
+	Environment string
+	APIVersion  string
+	Config      struct {
 		Cognito struct {
 			UserPoolID        string
 			UserPoolSecretKey string
@@ -36,6 +40,9 @@ type KernelStore struct {
 			HTTP struct {
 				Address string
 			}
+			GRPC struct {
+				Address string
+			}
 		}
 		Tracing struct {
 			Collector string
@@ -49,6 +56,7 @@ type KernelStore struct {
 func init() {
 	viper.SetDefault("alexandria.service", "identity")
 	viper.SetDefault("alexandria.version", "1")
+	viper.SetDefault("alexandria.environment", "dev")
 	viper.SetDefault("alexandria.api-version", "v1")
 	viper.SetDefault("alexandria.aws.cognito.user-pool-id", "")
 	viper.SetDefault("alexandria.aws.cognito.user-secret-key", "")
@@ -62,6 +70,7 @@ func init() {
 	viper.SetDefault("alexandria.tracing.jaeger.username", "")
 	viper.SetDefault("alexandria.tracing.jaeger.password", "")
 	viper.SetDefault("alexandria.transport.http.address", "localhost:8080")
+	viper.SetDefault("alexandria.transport.grpc.address", "localhost:9090")
 }
 
 func NewKernelStore() KernelStore {
@@ -81,9 +90,10 @@ func NewKernelStore() KernelStore {
 		// Config file was found but another error was produced, use default values
 	}
 
-	kernel.Service = viper.GetString("alexandria.service")
-	kernel.Version = viper.GetString("alexandria.version")
-	kernel.APIVersion = viper.GetString("alexandria.api-version")
+	kernel.Service = strings.ToLower(viper.GetString("alexandria.service"))
+	kernel.Version = strings.ToLower(viper.GetString("alexandria.version"))
+	kernel.Environment = SanitizeEnvironment(strings.ToLower(viper.GetString("alexandria.environment")))
+	kernel.APIVersion = strings.ToLower(viper.GetString("alexandria.api-version"))
 
 	kernel.Config.Cognito.UserPoolID = viper.GetString("alexandria.aws.cognito.user-pool-id")
 	kernel.Config.Cognito.UserPoolSecretKey = viper.GetString("alexandria.aws.cognito.user-secret-key")
@@ -98,6 +108,7 @@ func NewKernelStore() KernelStore {
 	kernel.Config.Tracing.Username = viper.GetString("alexandria.tracing.jaeger.username")
 	kernel.Config.Tracing.Password = viper.GetString("alexandria.tracing.jaeger.password")
 	kernel.Config.Transport.HTTP.Address = viper.GetString("alexandria.transport.http.address")
+	kernel.Config.Transport.GRPC.Address = viper.GetString("alexandria.transport.grpc.address")
 
 	return kernel
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/application/command"
 	"github.com/alexandria-oss/identity-api/internal/domain"
 	"github.com/alexandria-oss/identity-api/internal/domain/aggregate"
+	"github.com/alexandria-oss/identity-api/pkg/adapter"
 	"github.com/alexandria-oss/identity-api/pkg/service"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -54,7 +55,7 @@ func (u User) SetRoutes(r *mux.Router) {
 	r.Path("/user/{username}/remove").Methods(http.MethodDelete).HandlerFunc(u.remove)
 }
 
-/* Actual Handlers */
+/* Actual Handler(s) */
 
 func (u User) get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -71,6 +72,7 @@ func (u User) get(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondErrorJSON(err, w)
 		return
 	}
+
 	_ = json.NewEncoder(w).Encode(user.ToPrimitive())
 }
 
@@ -98,7 +100,7 @@ func (u User) list(w http.ResponseWriter, r *http.Request) {
 		Users     []*aggregate.UserRootPrimitive `json:"users"`
 		NextToken string                         `json:"next_token"`
 	}{
-		Users:     aggregate.BulkUserToPrimitive(users),
+		Users:     adapter.BulkUserToPrimitive(users),
 		NextToken: string(nextToken),
 	})
 }

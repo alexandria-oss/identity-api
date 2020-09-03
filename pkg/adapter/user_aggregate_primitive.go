@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resiliency
+package adapter
 
-import (
-	"go.uber.org/ratelimit"
-	"net/http"
-)
+import "github.com/alexandria-oss/identity-api/internal/domain/aggregate"
 
-var rl = ratelimit.New(64)
+// BulkUserToPrimitive Convert a user aggregate root's slice to primitive-only slice
+func BulkUserToPrimitive(agSlice []*aggregate.UserRoot) []*aggregate.UserRootPrimitive {
+	users := make([]*aggregate.UserRootPrimitive, 0)
+	for _, u := range agSlice {
+		users = append(users, u.ToPrimitive())
+	}
 
-func RateLimit(h http.Handler) http.Handler {
-	rl.Take()
-	return h
+	return users
 }

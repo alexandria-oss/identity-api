@@ -16,48 +16,13 @@ package observability
 
 import (
 	"contrib.go.opencensus.io/exporter/jaeger"
-	ocprom "contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/alexandria-oss/identity-api/internal/domain"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opencensus.io/plugin/ochttp"
-	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 	"strings"
-	"time"
 )
 
-func InjectPrometheusHTTP(k domain.KernelStore) (*ocprom.Exporter, error) {
-	view.SetReportingPeriod(time.Second * 60)
-	err := view.Register(
-		ochttp.ServerLatencyView,
-		ochttp.ServerRequestBytesView,
-		ochttp.ServerRequestCountByMethod,
-		ochttp.ServerRequestCountView,
-		ochttp.ServerResponseBytesView,
-		ochttp.ServerResponseCountByStatusCode,
-	)
-	if err := view.Register(ochttp.ServerLatencyView); err != nil {
-		return nil, err
-	}
-
-	pe, err := ocprom.NewExporter(ocprom.Options{
-		Namespace:   strings.ToLower(k.Service),
-		Registry:    nil,
-		Registerer:  prometheus.DefaultRegisterer,
-		Gatherer:    prometheus.DefaultGatherer,
-		OnError:     nil,
-		ConstLabels: nil,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	view.RegisterExporter(pe)
-
-	return pe, nil
-}
-
-func InjectJaegerHTTP(k domain.KernelStore) (*jaeger.Exporter, error) {
+// StartJaegerTracing register a new Jaeger trace collector
+func StartJaegerTracing(k domain.KernelStore) (*jaeger.Exporter, error) {
 	je, err := jaeger.NewExporter(jaeger.Options{
 		CollectorEndpoint: k.Config.Tracing.Collector,
 		AgentEndpoint:     k.Config.Tracing.Agent,

@@ -13,27 +13,36 @@ import (
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/dependency"
 	"github.com/alexandria-oss/identity-api/internal/infrastructure/logging"
 	"github.com/alexandria-oss/identity-api/pkg/service"
+	"github.com/alexandria-oss/identity-api/pkg/service/wrapper"
 	"github.com/alexandria-oss/identity-api/pkg/transport"
+	"github.com/alexandria-oss/identity-api/pkg/transport/action"
 	"github.com/alexandria-oss/identity-api/pkg/transport/handler"
 	"github.com/google/wire"
+	"github.com/sirupsen/logrus"
 )
 
 // Injectors from wire.go:
 
-func InjectHTTP() (*transport.HTTPServer, func(), error) {
+func InjectTransport() (*transport.TransportFacade, func(), error) {
+	context := provideContext()
 	kernelStore := domain.NewKernelStore()
-	logger := logging.NewLogger()
+	logger := logging.NewLogger(kernelStore)
 	userHandlerImp, cleanup := dependency.InjectUserCommandHandler()
+	userCommandHandler := provideUserCommandHandler(userHandlerImp, logger)
 	userQueryImp, cleanup2 := dependency.InjectUserQuery()
-	user := handler.NewUser(userHandlerImp, userQueryImp)
+	userQuery := provideUserQuery(userQueryImp, logger)
+	user := handler.NewUser(userCommandHandler, userQuery)
 	v := provideHandlers(user)
-	httpServer, err := transport.NewHTTPServer(kernelStore, logger, v...)
+	actionUser := action.NewUser(userCommandHandler, userQuery)
+	v2 := provideGRPCServices(actionUser)
+	transportFacade, cleanup3, err := transport.NewTransportFacade(context, kernelStore, logger, v, v2)
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	return httpServer, func() {
+	return transportFacade, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil
@@ -41,7 +50,9 @@ func InjectHTTP() (*transport.HTTPServer, func(), error) {
 
 // wire.go:
 
-var httpSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, wire.Bind(new(service.UserCommandHandler), new(*cmdhandler.UserHandlerImp)), dependency.InjectUserCommandHandler, wire.Bind(new(service.UserQuery), new(*query.UserQueryImp)), dependency.InjectUserQuery, handler.NewUser, provideHandlers, transport.NewHTTPServer)
+var transportSet = wire.NewSet(domain.NewKernelStore, logging.NewLogger, dependency.InjectUserCommandHandler, provideUserCommandHandler, dependency.InjectUserQuery, provideUserQuery, handler.NewUser, provideHandlers, action.NewUser, provideGRPCServices,
+	provideContext, transport.NewTransportFacade,
+)
 
 var ctx = context.Background()
 
@@ -53,6 +64,18 @@ func provideContext() context.Context {
 	return ctx
 }
 
+func provideUserCommandHandler(svc *cmdhandler.UserHandlerImp, logger *logrus.Logger) service.UserCommandHandler {
+	return wrapper.NewUserCommandHandler(svc, logger)
+}
+
+func provideUserQuery(svc *query.UserQueryImp, logger *logrus.Logger) service.UserQuery {
+	return wrapper.NewUserQuery(svc, logger)
+}
+
 func provideHandlers(user *handler.User) []transport.Handler {
 	return []transport.Handler{user}
+}
+
+func provideGRPCServices(user *action.User) []transport.GRPCService {
+	return []transport.GRPCService{user}
 }

@@ -16,3 +16,7 @@
 
 # IDEA IDE folder
 .idea/
+
+# Dev environment logs
+log/
+logs/

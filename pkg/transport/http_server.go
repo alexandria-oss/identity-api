@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-// HTTPServer HTTP Server facade
+// HTTPServer HTTP Server proxy
 type HTTPServer struct {
 	server   *http.Server
 	kernel   domain.KernelStore
@@ -36,7 +36,7 @@ type HTTPServer struct {
 }
 
 // NewHTTPServer HTTPServer factory method - Create a new preconfigured HTTP Server instance
-func NewHTTPServer(k domain.KernelStore, l *log.Logger, handlers ...Handler) (*HTTPServer, error) {
+func NewHTTPServer(k domain.KernelStore, l *log.Logger, handlers ...Handler) *HTTPServer {
 	srv := &HTTPServer{
 		server: nil,
 		kernel: k,
@@ -45,14 +45,6 @@ func NewHTTPServer(k domain.KernelStore, l *log.Logger, handlers ...Handler) (*H
 	}
 
 	srv.setMiddlewares()
-
-	if err := srv.injectMetrics(); err != nil {
-		return nil, err
-	}
-
-	if err := srv.injectTracing(); err != nil {
-		return nil, err
-	}
 
 	srv.AddHandlers(handlers...)
 	srv.MapRoutes()
@@ -73,7 +65,7 @@ func NewHTTPServer(k domain.KernelStore, l *log.Logger, handlers ...Handler) (*H
 		ConnContext:       nil,
 	}
 
-	return srv, nil
+	return srv
 }
 
 // GetServer Obtain HTTPServer's root http.Server reference
@@ -102,7 +94,7 @@ func (s *HTTPServer) MapRoutes() {
 }
 
 func (s HTTPServer) setMiddlewares() {
-	s.router.Use(muxhandlers.RecoveryHandler())
+	s.router.Use(muxhandlers.RecoveryHandler(muxhandlers.RecoveryLogger(s.logger)))
 	s.router.Use(muxhandlers.CORS(
 		muxhandlers.AllowedMethods([]string{
 			http.MethodGet,
@@ -115,30 +107,5 @@ func (s HTTPServer) setMiddlewares() {
 		muxhandlers.AllowedOrigins([]string{"*"}),
 	))
 	s.router.Use(muxhandlers.CompressHandler)
-	s.router.Use(resiliency.RateLimit)
-}
-
-func (s HTTPServer) injectMetrics() error {
-	pe, err := observability.InjectPrometheusHTTP(s.kernel)
-	if err != nil {
-		s.logger.WithFields(log.Fields{
-			"caller": "transport.http.metrics",
-			"detail": err.Error(),
-		}).Error("cannot start prometheus metrics exporter")
-		return err
-	}
-	s.router.Path("/metrics").Handler(pe)
-	return nil
-}
-
-func (s HTTPServer) injectTracing() error {
-	_, err := observability.InjectJaegerHTTP(s.kernel)
-	if err != nil {
-		s.logger.WithFields(log.Fields{
-			"caller": "transport.http.tracing",
-			"detail": err.Error(),
-		}).Error("cannot start jaeger agent and collector exporter")
-		return err
-	}
-	return nil
+	s.router.Use(resiliency.HTTPRateLimit)
 }
