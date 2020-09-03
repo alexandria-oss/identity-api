@@ -25,7 +25,7 @@ import (
 // Integration testing
 func main() {
 	ctx := context.Background()
-	logger := logging.NewLogger()
+	logger := logging.NewLogger(domain.NewKernelStore())
 	dependency.SetContext(ctx)
 	usrQuery, cleanup := dependency.InjectUserQuery()
 	defer cleanup()
@@ -37,7 +37,7 @@ func main() {
 		panic(exception.GetDescription(err))
 	}
 
-	logger.Printf("%+v", user.Root)
+	logger.Printf("%+v", user.User)
 
 	users, token, err := usrQuery.List(ctx, &domain.Criteria{
 		FilterBy: domain.FilterMap{"email": ""},
@@ -50,7 +50,7 @@ func main() {
 	}
 
 	for _, user := range users {
-		logger.Printf("user: %+v", user.Root)
+		logger.Printf("user: %+v", user.User)
 	}
 
 	logger.Printf("next_token: %s", token)
