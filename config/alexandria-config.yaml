@@ -1,6 +1,7 @@
 alexandria:
   service: identity
   version: "1"
+  environment: dev
   api-version: v1
   aws:
     cognito:
