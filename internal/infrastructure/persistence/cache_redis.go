@@ -2,9 +2,10 @@ package persistence
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/alexandria-oss/common-go/exception"
 	"github.com/go-redis/redis/v8"
+	"log"
 	"sync"
 	"time"
 )
@@ -33,7 +34,7 @@ func (c *CacheRedis) Write(ctx context.Context, table, key string, value interfa
 		return conn.Set(ctx, c.generateComposedKey(table, key), value, duration).Err()
 	}
 
-	return errors.New("could not connect to cache database")
+	return exception.NewNetworkCall("redis", c.db.Options().Addr)
 }
 
 func (c *CacheRedis) Read(ctx context.Context, table, key string) (string, error) {
@@ -45,10 +46,15 @@ func (c *CacheRedis) Read(ctx context.Context, table, key string) (string, error
 			_ = conn.Close()
 		}()
 
-		return conn.Get(ctx, c.generateComposedKey(table, key)).Result()
+		res, err := conn.Get(ctx, c.generateComposedKey(table, key)).Result()
+		if err != nil {
+			log.Print(err)
+		}
+
+		return res, err
 	}
 
-	return "", errors.New("could not connect to cache database")
+	return "", exception.NewNetworkCall("redis", c.db.Options().Addr)
 }
 
 func (c *CacheRedis) Invalidate(ctx context.Context, table, key string) error {
@@ -63,7 +69,7 @@ func (c *CacheRedis) Invalidate(ctx context.Context, table, key string) error {
 		return conn.Del(ctx, c.generateComposedKey(table, key)).Err()
 	}
 
-	return errors.New("could not connect to cache database")
+	return exception.NewNetworkCall("redis", c.db.Options().Addr)
 }
 
 func (c CacheRedis) generateComposedKey(primary, secondary string) string {
