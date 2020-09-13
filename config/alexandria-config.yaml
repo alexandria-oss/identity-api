@@ -10,19 +10,19 @@ alexandria:
   persistence:
     cache:
       address:
-      - localhost:6379
+      - redis:6379
       database: 0
       network: tcp
       password: ""
       username: ""
   tracing:
     jaeger:
-      agent: localhost:6831
-      collector: http://localhost:14268/api/traces
+      agent: jaeger:6831
+      collector: http://jaeger:14268/api/traces
       password: ""
       username: ""
   transport:
     http:
-      address: localhost:8080
+      address: 0.0.0.0:8080
     grpc:
-      address: localhost:9090
+      address: 0.0.0.0:9090
